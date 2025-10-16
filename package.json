@@ -1,0 +1,23 @@
+{
+  "name": "api-growtwitter",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "ts-node-dev --respawn src/index.ts"
+  },
+  "keywords": [],
+  "author": "Iara Tassi",
+  "license": "ISC",
+  "description": "API REST para o Growtwitter, desenvolvida com Node.js, Express, TypeScript e Prisma, integrando autenticação, tweets, likes e sistema de seguidores.",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "prisma": "^6.17.1"
+  }
+}
