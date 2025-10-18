@@ -16,10 +16,10 @@ datasource db {
 model User {
   id String @id @db.Uuid @default(uuid()) 
   name String @db.VarChar(150)
-  username String @unique @db.VarChar(100)
+  userName String @unique @db.VarChar(100) @map("user_name")
   email String @unique
   password String @db.VarChar(100)  
-  imageUrl String? @db.VarChar(500)
+  imageUrl String? @db.VarChar(500) @map("image_url")
   
   tweets Tweet[]
   likes Like[]
@@ -38,7 +38,7 @@ model Tweet {
   id String @id @db.Uuid @default(uuid())
   content String
 
-  parentId String? @db.Uuid @map("parent_id")
+  parentId String? @db.Uuid @map("parent_id") 
   parent Tweet? @relation("replies", fields: [parentId], references: [id])
   replies Tweet[] @relation("replies")
 
