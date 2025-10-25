@@ -8,8 +8,9 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+console.log("Olá!");
+
 const porta = process.env.PORT || 3000;
 app.listen(porta, () => {
   console.log(`Servidor rodando na porta ${porta}`);
 });
-
