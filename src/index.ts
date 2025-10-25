@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import cors from "cors";
 import * as dotenv from "dotenv";
 
@@ -12,3 +12,4 @@ const porta = process.env.PORT || 3000;
 app.listen(porta, () => {
   console.log(`Servidor rodando na porta ${porta}`);
 });
+
