@@ -1,0 +1,41 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Compilados
+dist/
+coverage/
+
+# Ambiente
+.env
+.env.test
+
+# Prisma
+prisma/dev.db
+prisma/test.db
+prisma/*.sqlite
+prisma/migrations/
+
+# Docker
+postgres_data/
+docker-data/
+.docker/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+/src/generated/prisma
+
+/src/generated/prisma
+
+/src/generated/prisma
+
+/src/generated/prisma
+
+/src/generated/prisma
