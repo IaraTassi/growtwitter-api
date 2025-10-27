@@ -2,7 +2,6 @@ import { prisma } from "../config/prisma.config";
 import { CreateUserDto } from "../dtos/create.user.dto";
 import { mapUser } from "../mappers/user.mapper";
 import { User } from "../interfaces/user.interface";
-import { UserLoginDto } from "../dtos/user.login.dto";
 
 export class UserRepository {
   async criarUsuario(dto: CreateUserDto): Promise<User> {
@@ -39,10 +38,10 @@ export class UserRepository {
     return user ? mapUser(user) : null;
   }
 
-  async buscarPorIdentificador(dto: UserLoginDto): Promise<User | null> {
+  async buscarPorIdentificador(identifier: string): Promise<User | null> {
     const user = await prisma.user.findFirst({
       where: {
-        OR: [{ email: dto.identifier }, { userName: dto.identifier }],
+        OR: [{ email: identifier }, { userName: identifier }],
       },
       include: {
         tweets: true,
