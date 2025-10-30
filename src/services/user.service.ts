@@ -8,6 +8,15 @@ import jwt from "jsonwebtoken";
 export class UserService {
   private userRepository = new UserRepository();
 
+  public setRepositoryParaTestes(repo: UserRepository): void {
+    if (process.env.NODE_ENV !== "test") {
+      throw new Error(
+        "setRepositoryParaTestes só pode ser usado em ambiente de teste."
+      );
+    }
+    this.userRepository = repo;
+  }
+
   private validarCampo(valor: string | undefined, mensagem: string) {
     if (!valor?.trim()) throw new Error(mensagem);
   }

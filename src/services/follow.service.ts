@@ -5,6 +5,15 @@ import { FollowRepository } from "../repositories/follow.repository";
 export class FollowService {
   private followRepository = new FollowRepository();
 
+  public setRepositoryParaTestes(repo: FollowRepository): void {
+    if (process.env.NODE_ENV !== "test") {
+      throw new Error(
+        "setRepositoryParaTestes só pode ser usado em ambiente de teste."
+      );
+    }
+    this.followRepository = repo;
+  }
+
   private validarCampo(valor: string | undefined, mensagem: string) {
     if (!valor?.trim()) throw new Error(mensagem);
   }
