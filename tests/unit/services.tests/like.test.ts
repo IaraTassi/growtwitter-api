@@ -1,5 +1,5 @@
-import { LikeService } from "../../src/services/like.service";
-import { LikeRepository } from "../../src/repositories/like.repository";
+import { LikeService } from "../../../src/services/like.service";
+import { LikeRepository } from "../../../src/repositories/like.repository";
 
 describe("LikeService - Testes Unitários", () => {
   let service: LikeService;
