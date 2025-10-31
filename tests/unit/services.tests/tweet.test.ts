@@ -1,5 +1,5 @@
-import { TweetService } from "../../src/services/tweet.service";
-import { TweetRepository } from "../../src/repositories/tweet.repository";
+import { TweetService } from "../../../src/services/tweet.service";
+import { TweetRepository } from "../../../src/repositories/tweet.repository";
 
 describe("TweetService - Testes Unitários", () => {
   let service: TweetService;

@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { UserRepository } from "../../src/repositories/user.repository";
-import { UserService } from "../../src/services/user.service";
+import { UserRepository } from "../../../src/repositories/user.repository";
+import { UserService } from "../../../src/services/user.service";
 
 jest.mock("bcrypt", () => ({
   compare: jest.fn(),

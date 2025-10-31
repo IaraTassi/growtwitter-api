@@ -1,6 +1,6 @@
-import { FollowService } from "../../src/services/follow.service";
-import { FollowRepository } from "../../src/repositories/follow.repository";
-import { Follow } from "../../src/interfaces/follow.interface";
+import { FollowService } from "../../../src/services/follow.service";
+import { FollowRepository } from "../../../src/repositories/follow.repository";
+import { Follow } from "../../../src/interfaces/follow.interface";
 
 describe("FollowService - Testes Unitários", () => {
   let service: FollowService;
