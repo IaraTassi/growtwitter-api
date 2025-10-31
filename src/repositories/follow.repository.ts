@@ -32,4 +32,24 @@ export class FollowRepository {
       },
     });
   }
+
+  async buscarFollow(
+    followerId: string,
+    followingId: string
+  ): Promise<Follow | null> {
+    const follow = await prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+      include: {
+        follower: true,
+        following: true,
+      },
+    });
+
+    return follow ? mapFollow(follow) : null;
+  }
 }
