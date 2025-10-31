@@ -40,4 +40,21 @@ export class LikeRepository {
       },
     });
   }
+
+  async buscarLike(tweetId: string, userId: string): Promise<Like | null> {
+    const like = await prisma.like.findUnique({
+      where: {
+        userId_tweetId: {
+          userId,
+          tweetId,
+        },
+      },
+      include: {
+        user: true,
+        tweet: true,
+      },
+    });
+
+    return like ? mapLike(like) : null;
+  }
 }
