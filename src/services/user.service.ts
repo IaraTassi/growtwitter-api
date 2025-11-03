@@ -56,6 +56,20 @@ export class UserService {
     return this.userRepository.buscarPorId(id);
   }
 
+  async listarUsuarios(): Promise<User[]> {
+    const users = await this.userRepository.listarUsuarios();
+    return users ?? [];
+  }
+
+  async removerUsuario(id: string): Promise<void> {
+    this.validarCampo(id, "O ID do usuário é obrigatório.");
+
+    const userExistente = await this.userRepository.buscarPorIdentificador(id);
+    if (!userExistente) throw new Error("Usuário não encontrado para remoção.");
+
+    await this.userRepository.removerUsuario(id);
+  }
+
   async login(
     dto: UserLoginDto
   ): Promise<{ user: Omit<User, "password">; token: string }> {
