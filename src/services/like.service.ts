@@ -5,6 +5,15 @@ import { Like } from "../interfaces/like.interface";
 export class LikeService {
   private likeRepository = new LikeRepository();
 
+  public setRepositoryParaTestes(repo: LikeRepository): void {
+    if (process.env.NODE_ENV !== "test") {
+      throw new Error(
+        "setRepositoryParaTestes só pode ser usado em ambiente de teste."
+      );
+    }
+    this.likeRepository = repo;
+  }
+
   private validarCampo(valor: string | undefined, mensagem: string) {
     if (!valor?.trim()) throw new Error(mensagem);
   }

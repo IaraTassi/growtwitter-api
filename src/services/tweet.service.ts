@@ -5,6 +5,15 @@ import { TweetRepository } from "../repositories/tweet.repository";
 export class TweetService {
   private tweetRepository = new TweetRepository();
 
+  public setRepositoryParaTestes(repo: TweetRepository): void {
+    if (process.env.NODE_ENV !== "test") {
+      throw new Error(
+        "setRepositoryParaTestes só pode ser usado em ambiente de teste."
+      );
+    }
+    this.tweetRepository = repo;
+  }
+
   private validarCampo(valor: string | undefined, mensagem: string) {
     if (!valor?.trim()) throw new Error(mensagem);
   }

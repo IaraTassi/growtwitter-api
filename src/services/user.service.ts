@@ -8,6 +8,15 @@ import jwt from "jsonwebtoken";
 export class UserService {
   private userRepository = new UserRepository();
 
+  public setRepositoryParaTestes(repo: UserRepository): void {
+    if (process.env.NODE_ENV !== "test") {
+      throw new Error(
+        "setRepositoryParaTestes só pode ser usado em ambiente de teste."
+      );
+    }
+    this.userRepository = repo;
+  }
+
   private validarCampo(valor: string | undefined, mensagem: string) {
     if (!valor?.trim()) throw new Error(mensagem);
   }
@@ -45,6 +54,20 @@ export class UserService {
   async buscarPorId(id: string): Promise<User | null> {
     this.validarCampo(id, "O ID do usuário é obrigatório.");
     return this.userRepository.buscarPorId(id);
+  }
+
+  async listarUsuarios(): Promise<User[]> {
+    const users = await this.userRepository.listarUsuarios();
+    return users ?? [];
+  }
+
+  async removerUsuario(id: string): Promise<void> {
+    this.validarCampo(id, "O ID do usuário é obrigatório.");
+
+    const userExistente = await this.userRepository.buscarPorIdentificador(id);
+    if (!userExistente) throw new Error("Usuário não encontrado para remoção.");
+
+    await this.userRepository.removerUsuario(id);
   }
 
   async login(
