@@ -1,21 +1,31 @@
 # Usando imagem leve do Node
 FROM node:20-alpine
 
-# Define o diretório de trabalho dentro do container
+# Diretório de trabalho
 WORKDIR /app
 
-# Copia apenas package.json e package-lock.json para instalar dependências
+# Copia dependências primeiro (para cache)
 COPY package*.json ./
 
-# Instala dependências do projeto
+# Instala dependências
 RUN npm install
 
-# Copia todo o restante do código
+# Copia o restante do projeto
 COPY . .
 
-# Expõe a porta que o app vai rodar
+# Gera cliente Prisma
+RUN npx prisma generate
+
+# Copia e dá permissão ao entrypoint customizado
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Expõe a porta padrão do app
 EXPOSE 3000
 
-# Comando para rodar o app
-# Ajuste conforme seu script: "dev" (ts-node) ou "start" (node compilado)
-CMD ["npm", "run", "dev"]
+# Define variável padrão (pode ser sobrescrita no Compose ou Render)
+ARG NODE_ENV=development
+ENV NODE_ENV=${NODE_ENV}
+
+# Usa JSON form para respeitar sinais e boas práticas Docker
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

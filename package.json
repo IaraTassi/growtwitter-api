@@ -4,10 +4,13 @@
   "description": "API REST de um jogo desenvolvida com Node.js, Express e Prisma ORM para operaÃ§Ãµes CRUD.",
   "main": "index.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test jest --setupFilesAfterEnv ./tests/setup.ts --runInBand",
-    "test:watch": "cross-env NODE_ENV=test jest --watch --setupFilesAfterEnv ./tests/setup.ts",
-    "test:coverage": "cross-env NODE_ENV=test jest --coverage --setupFilesAfterEnv ./tests/setup.ts",
-    "dev": "ts-node-dev --respawn src/index.ts"
+    "test": "cross-env NODE_ENV=test jest --setupFilesAfterEnv=./tests/setup.ts --runInBand --detectOpenHandles",
+    "test:watch": "cross-env NODE_ENV=test jest --watch --setupFilesAfterEnv=./tests/setup.ts",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage --setupFilesAfterEnv=./tests/setup.ts --runInBand",
+    "test:docker": "npx prisma generate && npm run test",
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
   },
   "keywords": [],
   "author": "Iara Tassi",
@@ -19,8 +22,7 @@
     "express": "^5.1.0",
     "glob": "^11.0.3",
     "jsonwebtoken": "^9.0.2",
-    "prisma": "^6.18.0",
-    "uuid": "^13.0.0"
+    "prisma": "^6.18.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -29,7 +31,6 @@
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.9.1",
-    "@types/uuid": "^11.0.0",
     "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "jest": "^30.2.0",

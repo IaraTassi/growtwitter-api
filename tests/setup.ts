@@ -1,7 +1,15 @@
 import * as dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 
-dotenv.config({ path: ".env.test" });
+if (process.env.NODE_ENV === "test") {
+  dotenv.config({ path: ".env.test" });
+  console.log(
+    "🧪 Ambiente de teste carregado:",
+    process.env.JWT_SECRET ? "✅ JWT configurado" : "❌ JWT ausente"
+  );
+} else {
+  dotenv.config();
+}
 
 export const prisma = new PrismaClient({
   datasources: {
