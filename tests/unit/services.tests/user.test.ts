@@ -238,7 +238,7 @@ describe("UserService - Testes Unitários", () => {
 
   describe("UserService - removerUsuario", () => {
     it("deve remover usuário com sucesso", async () => {
-      mockRepository.buscarPorIdentificador.mockResolvedValue({
+      mockRepository.buscarPorId.mockResolvedValue({
         id: "1",
         ...validDto,
       } as any);
@@ -246,7 +246,7 @@ describe("UserService - Testes Unitários", () => {
 
       await service.removerUsuario("1");
 
-      expect(mockRepository.buscarPorIdentificador).toHaveBeenCalledWith("1");
+      expect(mockRepository.buscarPorId).toHaveBeenCalledWith("1");
       expect(mockRepository.removerUsuario).toHaveBeenCalledWith("1");
     });
 
@@ -257,7 +257,7 @@ describe("UserService - Testes Unitários", () => {
     });
 
     it("deve lançar erro se usuário não existir", async () => {
-      mockRepository.buscarPorIdentificador.mockResolvedValue(null);
+      mockRepository.buscarPorId.mockResolvedValue(null);
 
       await expect(service.removerUsuario("999")).rejects.toThrow(
         "Usuário não encontrado para remoção."
