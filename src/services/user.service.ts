@@ -64,7 +64,7 @@ export class UserService {
   async removerUsuario(id: string): Promise<void> {
     this.validarCampo(id, "O ID do usuário é obrigatório.");
 
-    const userExistente = await this.userRepository.buscarPorIdentificador(id);
+    const userExistente = await this.userRepository.buscarPorId(id);
     if (!userExistente) throw new Error("Usuário não encontrado para remoção.");
 
     await this.userRepository.removerUsuario(id);
