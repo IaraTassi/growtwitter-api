@@ -45,7 +45,11 @@ export class FollowService {
     if (relacionamentoExistente)
       throw new Error("O usuário já está seguindo este perfil.");
 
-    const follow = await this.followRepository.seguirUsuario(dto, followerId);
+    const follow = await this.followRepository.seguirUsuario(
+      followerId,
+      dto.followingId
+    );
+
     return follow;
   }
 

@@ -1,14 +1,16 @@
 import { prisma } from "../config/prisma.config";
-import { FollowDto } from "../dtos/follow.dto";
 import { Follow } from "../interfaces/follow.interface";
 import { mapFollow } from "../mappers/follow.mapper";
 
 export class FollowRepository {
-  async seguirUsuario(dto: FollowDto, followerId: string): Promise<Follow> {
+  async seguirUsuario(
+    followerId: string,
+    followingId: string
+  ): Promise<Follow> {
     const follow = await prisma.follow.create({
       data: {
         followerId,
-        followingId: dto.followingId,
+        followingId,
       },
       include: {
         follower: true,
