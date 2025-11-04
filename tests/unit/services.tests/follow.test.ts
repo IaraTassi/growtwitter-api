@@ -83,8 +83,8 @@ describe("FollowService - Testes Unitários", () => {
         "user2"
       );
       expect(mockRepository.seguirUsuario).toHaveBeenCalledWith(
-        { followingId: "user2" },
-        "user1"
+        "user1",
+        "user2"
       );
     });
 
