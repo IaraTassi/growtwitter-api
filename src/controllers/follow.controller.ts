@@ -1,12 +1,19 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { FollowService } from "../services/follow.service";
+import { AuthRequest } from "../middlewares/auth.middleware";
 
 const followService = new FollowService();
 
 export class FollowController {
-  async buscarFollow(req: Request, res: Response, next: NextFunction) {
+  async buscarFollow(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { followerId, followingId } = req.params;
+      const followerId = req.userId!;
+      const { userId: followingId } = req.params;
+
+      if (!followingId) {
+        return res.status(400).json({ erro: "ID do usuário é obrigatório." });
+      }
+
       const follow = await followService.buscarFollow(followerId, followingId);
       return res.status(200).json({
         ok: true,
@@ -18,14 +25,20 @@ export class FollowController {
     }
   }
 
-  async seguirUsuario(req: Request, res: Response, next: NextFunction) {
+  async seguirUsuario(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { followingId } = req.params;
-      const { followerId } = req.body;
-      const follow = await followService.seguirUsuario(
-        { followingId },
-        followerId
-      );
+      const followerId = req.userId!;
+      const { userId: followingId } = req.params;
+
+      if (!followingId) {
+        return res.status(400).json({
+          erro: "ID do usuário é obrigatório.",
+        });
+      }
+
+      const dto = { followingId };
+      const follow = await followService.seguirUsuario(dto, followerId);
+
       return res.status(201).json({
         ok: true,
         message: "Usuário seguido com sucesso.",
@@ -36,10 +49,19 @@ export class FollowController {
     }
   }
 
-  async deixarDeSeguirUsuario(req: Request, res: Response, next: NextFunction) {
+  async deixarDeSeguirUsuario(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
-      const { followingId } = req.params;
-      const { followerId } = req.body;
+      const followerId = req.userId!;
+      const { userId: followingId } = req.params;
+
+      if (!followingId) {
+        return res.status(400).json({ erro: "ID do usuário é obrigatório." });
+      }
+
       await followService.deixarDeSeguirUsuario(followerId, followingId);
       return res.status(200).json({
         ok: true,

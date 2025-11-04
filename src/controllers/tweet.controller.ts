@@ -1,13 +1,17 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { TweetService } from "../services/tweet.service";
+import { AuthRequest } from "../middlewares/auth.middleware";
 
 const tweetService = new TweetService();
 
 export class TweetController {
-  async criarTweet(req: Request, res: Response, next: NextFunction) {
+  async criarTweet(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { userId, content } = req.body;
-      const tweet = await tweetService.criarTweet({ content }, userId);
+      const userId = req.userId;
+      const { content } = req.body;
+
+      const tweet = await tweetService.criarTweet({ content }, userId!);
+
       return res.status(201).json({
         ok: true,
         message: "Tweet criado com sucesso.",
@@ -18,13 +22,23 @@ export class TweetController {
     }
   }
 
-  async criarReply(req: Request, res: Response, next: NextFunction) {
+  async criarReply(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { userId, content, parentId } = req.body;
+      const userId = req.userId;
+      const { content } = req.body;
+      const { parentId } = req.params;
+
+      if (!parentId) {
+        return res
+          .status(400)
+          .json({ erro: "O ID do tweet original é obrigatório." });
+      }
+
       const reply = await tweetService.criarReply(
         { content, parentId },
-        userId
+        userId!
       );
+
       return res.status(201).json({
         ok: true,
         message: "Resposta criada com sucesso.",
@@ -35,16 +49,16 @@ export class TweetController {
     }
   }
 
-  async buscarFeedUsuario(req: Request, res: Response, next: NextFunction) {
+  async buscarFeedUsuario(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { userId } = req.params;
+      const userId = req.userId!;
       const feed = await tweetService.buscarFeedUsuario(userId);
+
       return res.status(200).json({
         ok: true,
-        message: "Feed buscado com sucesso.",
         feed,
       });
-    } catch (error: any) {
+    } catch (error) {
       next(error);
     }
   }

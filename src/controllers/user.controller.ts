@@ -39,6 +39,32 @@ export class UserController {
     }
   }
 
+  async listarUsuarios(req: Request, res: Response, next: NextFunction) {
+    try {
+      const users = await userService.listarUsuarios();
+      return res.status(200).json({
+        ok: true,
+        message: "Lista de usuários obtida com sucesso.",
+        users,
+      });
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
+  async removerUsuario(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req.params;
+      await userService.removerUsuario(userId);
+      return res.status(200).json({
+        ok: true,
+        message: "Usuário removido com sucesso.",
+      });
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
   async login(req: Request, res: Response, next: NextFunction) {
     try {
       const { identifier, password } = req.body;
