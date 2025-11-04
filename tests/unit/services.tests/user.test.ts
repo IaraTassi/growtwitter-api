@@ -29,6 +29,8 @@ describe("UserService - Testes Unitários", () => {
     mockRepository = {
       criarUsuario: jest.fn(),
       buscarPorId: jest.fn(),
+      listarUsuarios: jest.fn(),
+      removerUsuario: jest.fn(),
       buscarPorIdentificador: jest.fn(),
     } as jest.Mocked<UserRepository>;
 
@@ -145,6 +147,49 @@ describe("UserService - Testes Unitários", () => {
         "O email já está em uso."
       );
     });
+
+    it("deve registrar usuário com sucesso quando imageUrl é fornecida", async () => {
+      const dtoComImagem = {
+        ...validDto,
+        imageUrl: "https://img.com/test.png",
+      };
+
+      (bcrypt.hash as jest.Mock).mockResolvedValue("hashed_password");
+
+      mockRepository.buscarPorIdentificador.mockResolvedValue(null);
+      mockRepository.criarUsuario.mockResolvedValue({
+        id: "1",
+        ...dtoComImagem,
+        password: "hashed_password",
+      } as any);
+
+      const result = await service.registrar(dtoComImagem);
+
+      expect(result).toHaveProperty("id", "1");
+      expect(result).toHaveProperty("imageUrl", "https://img.com/test.png");
+      expect(mockRepository.criarUsuario).toHaveBeenCalledWith({
+        ...dtoComImagem,
+        password: "hashed_password",
+      });
+      expect(bcrypt.hash).toHaveBeenCalledWith(dtoComImagem.password, 8);
+    });
+
+    it("deve registrar usuário com sucesso mesmo sem imageUrl", async () => {
+      (bcrypt.hash as jest.Mock).mockResolvedValue("hashed_password");
+      const dtoSemImagem = { ...validDto, imageUrl: undefined };
+      mockRepository.buscarPorIdentificador.mockResolvedValue(null);
+      mockRepository.criarUsuario.mockResolvedValue({
+        id: "1",
+        ...dtoSemImagem,
+        password: "hashed_password",
+      } as any);
+
+      const result = await service.registrar(dtoSemImagem);
+
+      expect(result).toHaveProperty("id", "1");
+      expect(mockRepository.criarUsuario).toHaveBeenCalled();
+      expect(bcrypt.hash).toHaveBeenCalledWith(dtoSemImagem.password, 8);
+    });
   });
 
   describe("UserService - buscarPorId", () => {
@@ -163,6 +208,59 @@ describe("UserService - Testes Unitários", () => {
     it("deve lançar erro se ID não for informado", async () => {
       await expect(service.buscarPorId("")).rejects.toThrow(
         "O ID do usuário é obrigatório."
+      );
+    });
+  });
+
+  describe("UserService - listarUsuarios", () => {
+    it("deve retornar lista de usuários", async () => {
+      const usersMock = [
+        { id: "1", ...validDto } as any,
+        { id: "2", ...validDto } as any,
+      ];
+      mockRepository.listarUsuarios.mockResolvedValue(usersMock);
+
+      const result = await service.listarUsuarios();
+
+      expect(result).toHaveLength(2);
+      expect(mockRepository.listarUsuarios).toHaveBeenCalled();
+    });
+
+    it("deve retornar array vazio se não houver usuários", async () => {
+      mockRepository.listarUsuarios.mockResolvedValue([]);
+
+      const result = await service.listarUsuarios();
+
+      expect(result).toEqual([]);
+      expect(mockRepository.listarUsuarios).toHaveBeenCalled();
+    });
+  });
+
+  describe("UserService - removerUsuario", () => {
+    it("deve remover usuário com sucesso", async () => {
+      mockRepository.buscarPorIdentificador.mockResolvedValue({
+        id: "1",
+        ...validDto,
+      } as any);
+      mockRepository.removerUsuario.mockResolvedValue(undefined);
+
+      await service.removerUsuario("1");
+
+      expect(mockRepository.buscarPorIdentificador).toHaveBeenCalledWith("1");
+      expect(mockRepository.removerUsuario).toHaveBeenCalledWith("1");
+    });
+
+    it("deve lançar erro se ID não for informado", async () => {
+      await expect(service.removerUsuario("")).rejects.toThrow(
+        "O ID do usuário é obrigatório."
+      );
+    });
+
+    it("deve lançar erro se usuário não existir", async () => {
+      mockRepository.buscarPorIdentificador.mockResolvedValue(null);
+
+      await expect(service.removerUsuario("999")).rejects.toThrow(
+        "Usuário não encontrado para remoção."
       );
     });
   });

@@ -53,4 +53,24 @@ export class UserRepository {
 
     return user ? mapUser(user) : null;
   }
+
+  async listarUsuarios(): Promise<User[]> {
+    const users = await prisma.user.findMany({
+      include: {
+        tweets: true,
+        followers: true,
+        following: true,
+        likes: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    return users.map(mapUser);
+  }
+
+  async removerUsuario(id: string): Promise<void> {
+    await prisma.user.delete({
+      where: { id },
+    });
+  }
 }
