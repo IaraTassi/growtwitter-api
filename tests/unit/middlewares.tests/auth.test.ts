@@ -27,6 +27,7 @@ describe("authMiddleware", () => {
     authMiddleware(req as AuthRequest, res as Response, next);
     expect(next).toHaveBeenCalledWith({
       status: 401,
+      ok: false,
       message: "Token de autenticação não fornecido ou inválido.",
     });
   });
@@ -39,6 +40,7 @@ describe("authMiddleware", () => {
 
     expect(next).toHaveBeenCalledWith({
       status: 500,
+      ok: false,
       message: "Erro interno de autenticação.",
     });
   });
@@ -63,6 +65,7 @@ describe("authMiddleware", () => {
 
     expect(next).toHaveBeenCalledWith({
       status: 401,
+      ok: false,
       message: "Token inválido ou expirado.",
     });
   });

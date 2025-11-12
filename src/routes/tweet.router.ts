@@ -22,6 +22,7 @@ tweetRoutes.post(
   "/:parentId/reply",
   authMiddleware,
   validarCamposTweet,
+  validateUUIDParams,
   (req, res, next) => tweetController.criarReply(req, res, next)
 );
 tweetRoutes.get("/feed", authMiddleware, (req, res, next) =>

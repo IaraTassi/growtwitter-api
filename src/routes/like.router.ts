@@ -27,8 +27,11 @@ likeRoutes.post(
   validateUUIDParams,
   (req, res, next) => likeController.adicionarLike(req, res, next)
 );
-likeRoutes.delete("/:tweetId", authMiddleware, (req, res, next) =>
-  likeController.removerLike(req, res, next)
+likeRoutes.delete(
+  "/:tweetId",
+  authMiddleware,
+  validateUUIDParams,
+  (req, res, next) => likeController.removerLike(req, res, next)
 );
 
 export default likeRoutes;

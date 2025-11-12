@@ -2,5 +2,15 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
-  setupFilesAfterEnv: ["./tests/setup.ts"],
+  setupFilesAfterEnv: ["<rootDir>/tests/setup.ts"],
+  transformIgnorePatterns: ["/node_modules/(?!uuid)/"],
+  moduleFileExtensions: ["ts", "js", "json"],
+  moduleNameMapper: {
+    "^uuid$": require.resolve("uuid"),
+  },
+  globals: {
+    "ts-jest": {
+      tsconfig: "tsconfig.json",
+    },
+  },
 };

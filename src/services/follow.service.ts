@@ -1,31 +1,33 @@
 import { FollowDto } from "../dtos/follow.dto";
 import { Follow } from "../interfaces/follow.interface";
 import { FollowRepository } from "../repositories/follow.repository";
+import { AppError } from "../errors/app.error";
+import { UserRepository } from "../repositories/user.repository";
 
 export class FollowService {
-  private followRepository = new FollowRepository();
+  private followRepository: FollowRepository;
+  private userRepository: UserRepository;
 
-  public setRepositoryParaTestes(repo: FollowRepository): void {
+  constructor() {
+    this.followRepository = new FollowRepository();
+    this.userRepository = new UserRepository();
+  }
+
+  public setRepositoryParaTestes(
+    followRepo: FollowRepository,
+    userRepo: UserRepository
+  ): void {
     if (process.env.NODE_ENV !== "test") {
       throw new Error(
         "setRepositoryParaTestes só pode ser usado em ambiente de teste."
       );
     }
-    this.followRepository = repo;
+    this.followRepository = followRepo;
+    this.userRepository = userRepo;
   }
 
   private validarCampo(valor: string | undefined, mensagem: string) {
-    if (!valor?.trim()) throw new Error(mensagem);
-  }
-
-  async buscarFollow(
-    followerId: string,
-    followingId: string
-  ): Promise<Follow | null> {
-    this.validarCampo(followerId, "O ID do seguidor é obrigatório.");
-    this.validarCampo(followingId, "O ID do usuário seguido é obrigatório.");
-
-    return this.followRepository.buscarFollow(followerId, followingId);
+    if (!valor?.trim()) throw new AppError(mensagem, 400);
   }
 
   async seguirUsuario(dto: FollowDto, followerId: string): Promise<Follow> {
@@ -36,19 +38,42 @@ export class FollowService {
     );
 
     if (followerId === dto.followingId)
-      throw new Error("Um usuário não pode seguir a si mesmo.");
+      throw new AppError("Um usuário não pode seguir a si mesmo.", 409);
+
+    const usuarioExistente = await this.userRepository.buscarPorId(
+      dto.followingId
+    );
+    if (!usuarioExistente) {
+      throw new AppError("Usuário não encontrado.", 404);
+    }
 
     const relacionamentoExistente = await this.followRepository.buscarFollow(
       followerId,
       dto.followingId
     );
-    if (relacionamentoExistente)
-      throw new Error("O usuário já está seguindo este perfil.");
 
-    const follow = await this.followRepository.seguirUsuario(
+    if (relacionamentoExistente)
+      throw new AppError("O usuário já está seguindo este perfil.", 400);
+
+    return await this.followRepository.seguirUsuario(
       followerId,
       dto.followingId
     );
+  }
+
+  async buscarFollow(
+    followerId: string,
+    followingId: string
+  ): Promise<Follow | null> {
+    this.validarCampo(followerId, "O ID do seguidor é obrigatório.");
+    this.validarCampo(followingId, "O ID do usuário seguido é obrigatório.");
+
+    const follow = await this.followRepository.buscarFollow(
+      followerId,
+      followingId
+    );
+
+    if (!follow) throw new AppError("Follow não encontrado.", 404);
 
     return follow;
   }
@@ -64,14 +89,15 @@ export class FollowService {
     );
 
     if (followerId === followingId)
-      throw new Error("Um usuário não pode deixar de seguir a si mesmo.");
+      throw new AppError("Um usuário não pode seguir a si mesmo.", 409);
 
     const relacionamentoExistente = await this.followRepository.buscarFollow(
       followerId,
       followingId
     );
+
     if (!relacionamentoExistente)
-      throw new Error("O usuário não segue este perfil.");
+      throw new AppError("O usuário não segue este perfil.", 404);
 
     await this.followRepository.deixarDeSeguirUsuario(followerId, followingId);
   }

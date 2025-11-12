@@ -15,12 +15,6 @@ import { validarCamposFollow } from "../middlewares/follow.middleware";
 const followRoutes = Router();
 const followController = new FollowController();
 
-followRoutes.get(
-  "/:userId",
-  authMiddleware,
-  validateUUIDParams,
-  (req, res, next) => followController.buscarFollow(req, res, next)
-);
 followRoutes.post(
   "/:userId",
   authMiddleware,
@@ -28,6 +22,13 @@ followRoutes.post(
   validateUUIDParams,
   (req, res, next) => followController.seguirUsuario(req, res, next)
 );
+followRoutes.get(
+  "/:userId",
+  authMiddleware,
+  validateUUIDParams,
+  (req, res, next) => followController.buscarFollow(req, res, next)
+);
+
 followRoutes.delete(
   "/:userId",
   authMiddleware,

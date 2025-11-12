@@ -11,6 +11,8 @@ coverage/
 # Ambiente
 .env
 .env.test
+.env.dev
+.env.prod
 
 # Prisma
 prisma/dev.db

@@ -1,38 +1,27 @@
 import * as dotenv from "dotenv";
-import { PrismaClient } from "@prisma/client";
+import path from "path";
+import { prisma } from "../src/config/prisma.config";
 
-if (process.env.NODE_ENV === "test") {
-  dotenv.config({ path: ".env.test" });
-  console.log(
-    "🧪 Ambiente de teste carregado:",
-    process.env.JWT_SECRET ? "✅ JWT configurado" : "❌ JWT ausente"
-  );
-} else {
-  dotenv.config();
-}
+dotenv.config({ path: path.resolve(__dirname, "../.env.test") });
 
-export const prisma = new PrismaClient({
-  datasources: {
-    db: { url: process.env.DATABASE_URL },
-  },
-});
+console.log("🧩 Ambiente de teste carregado:");
+console.log("  NODE_ENV:", process.env.NODE_ENV);
+console.log(
+  "  DATABASE_URL:",
+  process.env.DATABASE_URL?.includes("myapp_test") ? "✅ OK" : "❌ INCORRETO"
+);
+console.log("  JWT_SECRET:", process.env.JWT_SECRET ? "✅ OK" : "❌ AUSENTE");
 
 export const limparBanco = async () => {
   try {
-    await prisma.$transaction([
-      prisma.user.deleteMany(),
-      prisma.tweet.deleteMany(),
-      prisma.like.deleteMany(),
-      prisma.follow.deleteMany(),
-    ]);
+    await prisma.like.deleteMany();
+    await prisma.follow.deleteMany();
+    await prisma.tweet.deleteMany();
+    await prisma.user.deleteMany();
   } catch (err) {
     console.error("Erro ao limpar banco de testes:", err);
   }
 };
-
-beforeEach(async () => {
-  await limparBanco();
-});
 
 afterAll(async () => {
   await prisma.$disconnect();

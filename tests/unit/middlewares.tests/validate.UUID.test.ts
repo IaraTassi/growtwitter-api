@@ -19,6 +19,7 @@ describe("validateUUIDParams Middleware", () => {
     validateUUIDParams(mockReq, mockRes, mockNext);
     expect(mockNext).toHaveBeenCalledWith({
       status: 400,
+      ok: false,
       message:
         'O parâmetro "id" é inválido ou ausente. Deve ser um UUID válido.',
     });
@@ -40,6 +41,7 @@ describe("validateUUIDParams Middleware", () => {
     validateUUIDParams(mockReq, mockRes, mockNext);
     expect(mockNext).toHaveBeenCalledWith({
       status: 400,
+      ok: false,
       message:
         'O parâmetro "id" é inválido ou ausente. Deve ser um UUID válido.',
     });

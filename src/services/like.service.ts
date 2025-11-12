@@ -1,6 +1,7 @@
 import { LikeDto } from "./../dtos/like.dto";
 import { LikeRepository } from "../repositories/like.repository";
 import { Like } from "../interfaces/like.interface";
+import { AppError } from "../errors/app.error";
 
 export class LikeService {
   private likeRepository = new LikeRepository();
@@ -15,7 +16,7 @@ export class LikeService {
   }
 
   private validarCampo(valor: string | undefined, mensagem: string) {
-    if (!valor?.trim()) throw new Error(mensagem);
+    if (!valor?.trim()) throw new AppError(mensagem, 400);
   }
 
   async buscarLike(tweetId: string, userId: string): Promise<Like | null> {
@@ -30,7 +31,7 @@ export class LikeService {
     this.validarCampo(userId, "O ID do usuário é obrigatório.");
 
     const likeExistente = await this.buscarLike(dto.tweetId, userId);
-    if (likeExistente) throw new Error("Usuário já curtiu este tweet.");
+    if (likeExistente) throw new AppError("Usuário já curtiu este tweet.", 409);
 
     const like = await this.likeRepository.adicionarLike(dto, userId);
     return like;
@@ -41,7 +42,8 @@ export class LikeService {
     this.validarCampo(userId, "O ID do usuário é obrigatório.");
 
     const likeExistente = await this.buscarLike(tweetId, userId);
-    if (!likeExistente) throw new Error("Like não encontrado para remoção.");
+    if (!likeExistente)
+      throw new AppError("Like não encontrado para remoção.", 404);
 
     await this.likeRepository.removerLike(tweetId, userId);
   }

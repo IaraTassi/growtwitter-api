@@ -9,12 +9,8 @@ export class LikeController {
     try {
       const userId = req.userId!;
       const { tweetId } = req.params;
-
-      if (!tweetId) {
-        return res.status(400).json({ erro: "ID do tweet é obrigatório." });
-      }
-
       const like = await likeService.buscarLike(tweetId, userId);
+
       return res.status(200).json({
         ok: true,
         message: like ? "Like buscado com sucesso." : "Nenhum like encontrado.",
@@ -29,12 +25,8 @@ export class LikeController {
     try {
       const userId = req.userId!;
       const { tweetId } = req.params;
-
-      if (!tweetId) {
-        return res.status(400).json({ erro: "ID do tweet é obrigatório." });
-      }
-
       const like = await likeService.adicionarLike({ tweetId }, userId);
+
       return res.status(201).json({
         ok: true,
         message: "Like adicionado com sucesso.",
@@ -49,12 +41,8 @@ export class LikeController {
     try {
       const userId = req.userId!;
       const { tweetId } = req.params;
-
-      if (!tweetId) {
-        return res.status(400).json({ erro: "ID do tweet é obrigatório." });
-      }
-
       await likeService.removerLike(tweetId, userId);
+
       return res.status(200).json({
         ok: true,
         message: "Like removido com sucesso.",

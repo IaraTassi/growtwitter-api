@@ -65,12 +65,10 @@ export class UserRepository {
       orderBy: { name: "asc" },
     });
 
-    return users.map(mapUser);
+    return users.map((u) => mapUser(u));
   }
 
   async removerUsuario(id: string): Promise<void> {
-    await prisma.user.delete({
-      where: { id },
-    });
+    await prisma.user.delete({ where: { id } });
   }
 }

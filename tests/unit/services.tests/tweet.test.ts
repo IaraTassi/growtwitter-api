@@ -70,7 +70,20 @@ describe("TweetService - Testes Unitários", () => {
         content: validReplyDto.content,
         parentId: "tweet123",
         userId: "user1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
+
+      mockRepository.buscarFeedUsuario.mockResolvedValue([
+        {
+          id: validReplyDto.parentId,
+          content: "tweet original",
+          userId: "user1",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]);
+
       mockRepository.criarReply.mockResolvedValue(mockReply as any);
 
       const result = await service.criarReply(validReplyDto, "user1");

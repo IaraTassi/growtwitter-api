@@ -4,6 +4,7 @@ import { UserRepository } from "../repositories/user.repository";
 import { UserLoginDto } from "../dtos/user.login.dto";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { AppError } from "../errors/app.error";
 
 export class UserService {
   private userRepository = new UserRepository();
@@ -18,7 +19,7 @@ export class UserService {
   }
 
   private validarCampo(valor: string | undefined, mensagem: string) {
-    if (!valor?.trim()) throw new Error(mensagem);
+    if (!valor?.trim()) throw new AppError(mensagem, 400);
   }
 
   private async criarUsuario(dto: CreateUserDto): Promise<User> {
@@ -30,12 +31,13 @@ export class UserService {
     const usuarioExistente = await this.userRepository.buscarPorIdentificador(
       dto.userName
     );
-    if (usuarioExistente) throw new Error("O nome de usuário já está em uso.");
+    if (usuarioExistente)
+      throw new AppError("O nome de usuário já está em uso.", 409);
 
     const emailExistente = await this.userRepository.buscarPorIdentificador(
       dto.email
     );
-    if (emailExistente) throw new Error("O email já está em uso.");
+    if (emailExistente) throw new AppError("O email já está em uso.", 409);
 
     return this.userRepository.criarUsuario(dto);
   }
@@ -51,9 +53,13 @@ export class UserService {
     });
   }
 
-  async buscarPorId(id: string): Promise<User | null> {
+  async buscarPorId(id: string): Promise<User> {
     this.validarCampo(id, "O ID do usuário é obrigatório.");
-    return this.userRepository.buscarPorId(id);
+
+    const user = await this.userRepository.buscarPorId(id);
+    if (!user) throw new AppError("Usuário não encontrado.", 404);
+
+    return user;
   }
 
   async listarUsuarios(): Promise<User[]> {
@@ -65,7 +71,8 @@ export class UserService {
     this.validarCampo(id, "O ID do usuário é obrigatório.");
 
     const userExistente = await this.userRepository.buscarPorId(id);
-    if (!userExistente) throw new Error("Usuário não encontrado para remoção.");
+    if (!userExistente)
+      throw new AppError("Usuário não encontrado para remoção.", 404);
 
     await this.userRepository.removerUsuario(id);
   }
@@ -82,13 +89,14 @@ export class UserService {
     const user = await this.userRepository.buscarPorIdentificador(
       dto.identifier
     );
-    if (!user) throw new Error("Usuário não encontrado.");
+    if (!user) throw new AppError("Usuário não encontrado.", 404);
 
     const senhaValida = await bcrypt.compare(dto.password, user.password);
-    if (!senhaValida) throw new Error("Senha incorreta.");
+    if (!senhaValida) throw new AppError("Senha incorreta.", 401);
 
     const secret = process.env.JWT_SECRET;
-    if (!secret) throw new Error("JWT_SECRET não configurado no ambiente.");
+    if (!secret)
+      throw new AppError("JWT_SECRET não configurado no ambiente.", 500);
 
     const token = jwt.sign({ id: user.id, email: user.email }, secret, {
       expiresIn: "1h",

@@ -1,10 +1,12 @@
 import { FollowService } from "../../../src/services/follow.service";
 import { FollowRepository } from "../../../src/repositories/follow.repository";
 import { Follow } from "../../../src/interfaces/follow.interface";
+import { UserRepository } from "../../../src/repositories/user.repository";
 
 describe("FollowService - Testes Unitários", () => {
   let service: FollowService;
   let mockRepository: jest.Mocked<FollowRepository>;
+  let mockUserRepository: jest.Mocked<UserRepository>;
 
   const seguidorId = "user1";
   const seguindoId = "user2";
@@ -24,8 +26,31 @@ describe("FollowService - Testes Unitários", () => {
       deixarDeSeguirUsuario: jest.fn(),
     } as jest.Mocked<FollowRepository>;
 
+    mockUserRepository = {
+      buscarPorId: jest.fn(),
+    } as any;
+
+    mockUserRepository.buscarPorId.mockImplementation((id: string) => {
+      if (id === seguidorId) {
+        return Promise.resolve({
+          id,
+          name: "Usuário Seguidor",
+          email: "seguidor@example.com",
+        } as any);
+      }
+      if (id === seguindoId) {
+        return Promise.resolve({
+          id,
+          name: "Usuário Seguido",
+          email: "seguido@example.com",
+        } as any);
+      }
+      return Promise.resolve(null);
+    });
+
     service = new FollowService();
-    service.setRepositoryParaTestes(mockRepository);
+    service.setRepositoryParaTestes(mockRepository, mockUserRepository);
+
     jest.clearAllMocks();
   });
 
@@ -42,16 +67,15 @@ describe("FollowService - Testes Unitários", () => {
       );
     });
 
-    it("deve retornar null se o follow não existir", async () => {
+    it("deve lançar erro 404 se o follow não existir", async () => {
       mockRepository.buscarFollow.mockResolvedValue(null);
 
-      const result = await service.buscarFollow("user1", "user2");
-
-      expect(result).toBeNull();
-      expect(mockRepository.buscarFollow).toHaveBeenCalledWith(
-        "user1",
-        "user2"
-      );
+      await expect(
+        service.buscarFollow("user1", "user2")
+      ).rejects.toMatchObject({
+        message: "Follow não encontrado.",
+        status: 404,
+      });
     });
 
     it("deve lançar erro se o ID do seguidor não for informado", async () => {
@@ -155,7 +179,7 @@ describe("FollowService - Testes Unitários", () => {
     it("deve lançar erro ao tentar deixar de seguir a si mesmo", async () => {
       await expect(
         service.deixarDeSeguirUsuario("user1", "user1")
-      ).rejects.toThrow("Um usuário não pode deixar de seguir a si mesmo.");
+      ).rejects.toThrow("Um usuário não pode seguir a si mesmo.");
     });
   });
 });

@@ -1,76 +1,122 @@
-﻿version: "3.9"
+﻿# docker-compose.yml
+# 🐳 Configuração unificada de múltiplos ambientes (dev, test, prod)
 
 services:
-  # === Desenvolvimento ===
-  app_dev:
+  # =====================================================
+  # 🧩 Ambiente de Desenvolvimento
+  # =====================================================
+  api:
     build: .
-    container_name: growtwitter_app_dev
+    container_name: myapp-api
+    command: sh -c "npm run dev"
+    environment:
+      NODE_ENV: development
+    env_file:
+      - .env.dev
     ports:
       - "3000:3000"
-    env_file:
-      - .env
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@growtwitter_db_dev:5432/growtwitter?schema=public
-    volumes:
-      - .:/app
     depends_on:
-      - db_dev
-    command: ["/usr/local/bin/docker-entrypoint.sh"]
-    networks:
-      - dev_network
+      - db
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
 
-  db_dev:
-    image: postgres:15
-    container_name: growtwitter_db_dev
-    restart: always
+  db:
+    image: postgres:15-alpine
+    container_name: myapp-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: growtwitter
+      POSTGRES_DB: myapp_dev
     ports:
       - "5432:5432"
     volumes:
-      - growtwitter_postgres_data:/var/lib/postgresql/data
-    networks:
-      - dev_network
+      - pgdata_dev:/var/lib/postgresql/data
+    restart: always
 
-  # === Testes ===
-  app_test:
+  # =====================================================
+  # 🧪 Ambiente de Testes (Jest + Integração)
+  # =====================================================
+  # 🔍 Modo debug/manual: mantém o container ativo
+  api-test:
     build: .
-    container_name: growtwitter_app_test
+    container_name: myapp-api-test
+    command: sh -c "npm run prisma:generate && npm run prisma:migrate && tail -f /dev/null"
+    environment:
+      NODE_ENV: test
     env_file:
       - .env.test
-    environment:
-      - NODE_ENV=test
-      - DATABASE_URL=postgresql://postgres:postgres@growtwitter_db_test:5432/growtwitter_test?schema=public
-    volumes:
-      - .:/app
     depends_on:
-      - db_test
-    command: ["/usr/local/bin/docker-entrypoint.sh"]
-    networks:
-      - test_network
+      - db-test
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: "no"
 
-  db_test:
-    image: postgres:15
-    container_name: growtwitter_db_test
-    restart: always
+  # ⚙️ Modo automático: executa os testes e encerra
+  api-test-runner:
+    build: .
+    container_name: myapp-api-test-runner
+    command: sh -c "npm run prisma:generate && npm run prisma:migrate && npm run test:integration"
+    environment:
+      NODE_ENV: test
+    env_file:
+      - .env.test
+    depends_on:
+      - db-test
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: "no"
+
+  db-test:
+    image: postgres:15-alpine
+    container_name: myapp-db-test
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: growtwitter_test
+      POSTGRES_DB: myapp_test
     ports:
       - "5433:5432"
     volumes:
-      - growtwitter_postgres_test_data:/var/lib/postgresql/data
-    networks:
-      - test_network
+      - pgdata_test:/var/lib/postgresql/data
+    restart: always
 
+  # =====================================================
+  # 🏭 Ambiente de Produção
+  # =====================================================
+  api-prod:
+    build: .
+    container_name: myapp-api-prod
+    command: sh -c "npm run start"
+    environment:
+      NODE_ENV: production
+    env_file:
+      - .env.prod
+    ports:
+      - "4000:3000"
+    depends_on:
+      - db-prod
+    restart: unless-stopped
+
+  db-prod:
+    image: postgres:15-alpine
+    container_name: myapp-db-prod
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: myapp_prod
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    restart: always
+
+# =====================================================
+# Volumes persistentes para cada ambiente
+# =====================================================
 volumes:
-  growtwitter_postgres_data:
-  growtwitter_postgres_test_data:
-
-networks:
-  dev_network:
-  test_network:
+  pgdata_dev:
+  pgdata_test:
+  pgdata_prod:

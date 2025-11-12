@@ -9,18 +9,25 @@ import { mapTweet } from "./tweet.mapper";
 
 type LikeComRelacoes = PrismaLike & {
   user?: PrismaUser;
-  tweet?: PrismaTweet & {
-    user?: PrismaUser;
-  };
+  tweet?: PrismaTweet & { user?: PrismaUser };
 };
 
-export function mapLike(like: LikeComRelacoes): Like {
+export function mapLike(like: LikeComRelacoes, shallow = false): Like {
   return {
     userId: like.userId,
     tweetId: like.tweetId,
     createdAt: like.createdAt,
     updatedAt: like.updatedAt,
-    user: like.user ? mapUser(like.user) : undefined,
-    tweet: like.tweet ? mapTweet(like.tweet) : undefined,
+
+    user: shallow
+      ? undefined
+      : like.user
+      ? mapUser(like.user, true)
+      : undefined,
+    tweet: shallow
+      ? undefined
+      : like.tweet
+      ? mapTweet(like.tweet, true)
+      : undefined,
   };
 }
