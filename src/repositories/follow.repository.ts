@@ -8,31 +8,11 @@ export class FollowRepository {
     followingId: string
   ): Promise<Follow> {
     const follow = await prisma.follow.create({
-      data: {
-        followerId,
-        followingId,
-      },
-      include: {
-        follower: true,
-        following: true,
-      },
+      data: { followerId, followingId },
+      include: { follower: true, following: true },
     });
 
     return mapFollow(follow);
-  }
-
-  async deixarDeSeguirUsuario(
-    followerId: string,
-    followingId: string
-  ): Promise<void> {
-    await prisma.follow.delete({
-      where: {
-        followerId_followingId: {
-          followerId,
-          followingId,
-        },
-      },
-    });
   }
 
   async buscarFollow(
@@ -40,18 +20,19 @@ export class FollowRepository {
     followingId: string
   ): Promise<Follow | null> {
     const follow = await prisma.follow.findUnique({
-      where: {
-        followerId_followingId: {
-          followerId,
-          followingId,
-        },
-      },
-      include: {
-        follower: true,
-        following: true,
-      },
+      where: { followerId_followingId: { followerId, followingId } },
+      include: { follower: true, following: true },
     });
 
     return follow ? mapFollow(follow) : null;
+  }
+
+  async deixarDeSeguirUsuario(
+    followerId: string,
+    followingId: string
+  ): Promise<void> {
+    await prisma.follow.delete({
+      where: { followerId_followingId: { followerId, followingId } },
+    });
   }
 }
