@@ -30,4 +30,3 @@ services:
 
 volumes:
   growtwitter_postgres_data:
-
