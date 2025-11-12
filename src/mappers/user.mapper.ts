@@ -16,7 +16,7 @@ type UsuarioComRelacoes = PrismaUser & {
   following?: PrismaFollow[];
 };
 
-export function mapUser(user: UsuarioComRelacoes): User {
+export function mapUser(user: UsuarioComRelacoes, shallow = false): User {
   return {
     id: user.id,
     name: user.name,
@@ -24,11 +24,16 @@ export function mapUser(user: UsuarioComRelacoes): User {
     email: user.email,
     password: user.password,
     imageUrl: user.imageUrl ?? null,
-    tweets: user.tweets?.map(mapTweet),
-    likes: user.likes?.map(mapLike),
-    followers: user.followers?.map(mapFollow),
-    following: user.following?.map(mapFollow),
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
+
+    tweets: shallow ? undefined : user.tweets?.map((t) => mapTweet(t, true)),
+    likes: shallow ? undefined : user.likes?.map((l) => mapLike(l, true)),
+    followers: shallow
+      ? undefined
+      : user.followers?.map((f) => mapFollow(f, true)),
+    following: shallow
+      ? undefined
+      : user.following?.map((f) => mapFollow(f, true)),
   };
 }

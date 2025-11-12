@@ -1,7 +1,7 @@
 {
   "name": "api-growtwitter",
   "version": "1.0.0",
-  "description": "API REST de um jogo desenvolvida com Node.js, Express e Prisma ORM para operaÃ§Ãµes CRUD.",
+  "description": "API REST de um jogo desenvolvida com Node.js, Express e Prisma ORM para CRUD.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
