@@ -6,19 +6,15 @@ import { mapTweet } from "../mappers/tweet.mapper";
 export class TweetRepository {
   async criarTweet(dto: CreateTweetDto, userId: string): Promise<Tweet> {
     const tweet = await prisma.tweet.create({
-      data: {
-        content: dto.content,
-        parentId: dto.parentId,
-        userId,
-      },
+      data: { content: dto.content, parentId: dto.parentId, userId },
       include: {
         user: true,
         likes: { include: { user: true, tweet: true } },
         replies: {
           include: {
+            user: true,
             likes: { include: { user: true } },
             replies: true,
-            user: true,
           },
         },
       },
@@ -27,27 +23,27 @@ export class TweetRepository {
     return mapTweet(tweet);
   }
 
-  async criarReply(dto: CreateTweetDto, userId: string): Promise<Tweet> {
-    const tweet = await prisma.tweet.create({
-      data: {
-        content: dto.content,
-        parentId: dto.parentId,
-        userId,
-      },
+  async buscarPorId(id: string): Promise<Tweet | null> {
+    const tweet = await prisma.tweet.findUnique({
+      where: { id },
       include: {
         user: true,
         likes: { include: { user: true, tweet: true } },
         replies: {
           include: {
+            user: true,
             likes: { include: { user: true } },
             replies: true,
-            user: true,
           },
         },
       },
     });
 
-    return mapTweet(tweet);
+    return tweet ? mapTweet(tweet) : null;
+  }
+
+  async criarReply(dto: CreateTweetDto, userId: string): Promise<Tweet> {
+    return this.criarTweet(dto, userId);
   }
 
   async buscarFeedUsuario(userId: string): Promise<Tweet[]> {
@@ -56,7 +52,7 @@ export class TweetRepository {
       select: { followingId: true },
     });
 
-    const followingIds = following.map((f: any) => f.followingId);
+    const followingIds = following.map((f) => f.followingId);
 
     const tweets = await prisma.tweet.findMany({
       where: { userId: { in: [userId, ...followingIds] } },
@@ -65,15 +61,15 @@ export class TweetRepository {
         likes: { include: { user: true, tweet: true } },
         replies: {
           include: {
+            user: true,
             likes: { include: { user: true } },
             replies: true,
-            user: true,
           },
         },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return tweets.map(mapTweet);
+    return tweets.map((t) => mapTweet(t));
   }
 }
