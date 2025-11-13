@@ -23,6 +23,25 @@ export class TweetRepository {
     return mapTweet(tweet);
   }
 
+  async buscarPorId(id: string): Promise<Tweet | null> {
+    const tweet = await prisma.tweet.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        likes: { include: { user: true, tweet: true } },
+        replies: {
+          include: {
+            user: true,
+            likes: { include: { user: true } },
+            replies: true,
+          },
+        },
+      },
+    });
+
+    return tweet ? mapTweet(tweet) : null;
+  }
+
   async criarReply(dto: CreateTweetDto, userId: string): Promise<Tweet> {
     return this.criarTweet(dto, userId);
   }
