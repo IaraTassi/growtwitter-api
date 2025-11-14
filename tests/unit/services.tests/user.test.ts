@@ -55,8 +55,8 @@ describe("UserService - Testes Unitários", () => {
 
     it("deve lançar erro se nome de usuário já existir", async () => {
       mockRepository.buscarPorIdentificador
-        .mockResolvedValueOnce({ id: "1" } as any)
-        .mockResolvedValueOnce(null);
+        .mockResolvedValueOnce({ id: "1" } as any) // username existe
+        .mockResolvedValueOnce(null); // email não existe
 
       await expect(
         (service as any).criarUsuario(validDto)
@@ -68,8 +68,8 @@ describe("UserService - Testes Unitários", () => {
 
     it("deve lançar erro se email já estiver em uso", async () => {
       mockRepository.buscarPorIdentificador
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({ id: "1" } as any);
+        .mockResolvedValueOnce(null) // username não existe
+        .mockResolvedValueOnce({ id: "1" } as any); // email existe
 
       await expect(
         (service as any).criarUsuario(validDto)
