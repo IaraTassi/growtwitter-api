@@ -19,11 +19,27 @@ export class TweetService {
     if (!valor?.trim()) throw new AppError(mensagem, 400);
   }
 
-  private validarConteudo(content: string) {
-    if (content.trim().length === 0)
-      throw new AppError("O conteúdo do tweet não pode estar vazio.", 400);
-    if (content.length > 280)
-      throw new AppError("O tweet não pode ter mais de 280 caracteres.", 400);
+  private validarConteudo(
+    content: string,
+    tipo: "tweet" | "resposta" = "tweet"
+  ) {
+    if (content.trim().length === 0) {
+      throw new AppError(
+        tipo === "tweet"
+          ? "O conteúdo do tweet não pode estar vazio."
+          : "O conteúdo da resposta não pode estar vazio.",
+        400
+      );
+    }
+
+    if (content.length > 280) {
+      throw new AppError(
+        tipo === "tweet"
+          ? "O tweet não pode ter mais de 280 caracteres."
+          : "A resposta não pode ter mais de 280 caracteres.",
+        400
+      );
+    }
   }
 
   async criarTweet(dto: CreateTweetDto, userId: string): Promise<Tweet> {
@@ -45,9 +61,12 @@ export class TweetService {
 
   async criarReply(dto: CreateTweetDto, userId: string): Promise<Tweet> {
     this.validarCampo(userId, "O ID do usuário é obrigatório.");
-    this.validarCampo(dto.content, "O conteúdo da resposta é obrigatório.");
     this.validarCampo(dto.parentId, "O ID do tweet original é obrigatório.");
-    this.validarConteudo(dto.content);
+
+    if (dto.content === undefined || dto.content === "") {
+      throw new AppError("O conteúdo da resposta é obrigatório.", 400);
+    }
+    this.validarConteudo(dto.content, "resposta");
 
     await this.buscarPorId(dto.parentId as string);
 
