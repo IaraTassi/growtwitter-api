@@ -1,6 +1,6 @@
 import { errorHandler } from "../../../src/middlewares/error.handler.middleware";
 
-describe("errorHandler Middleware", () => {
+describe("Middleware - errorHandler", () => {
   const mockRes: any = {
     status: jest.fn().mockReturnThis(),
     json: jest.fn(),
@@ -11,12 +11,15 @@ describe("errorHandler Middleware", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("deve retornar erro com status e mensagem personalizados", () => {
-    const error = { status: 400, message: "Erro de validação" };
+    const error = { statusCode: 400, ok: false, message: "Erro de validação" };
 
     errorHandler(error, mockReq, mockRes, mockNext);
 
     expect(mockRes.status).toHaveBeenCalledWith(400);
-    expect(mockRes.json).toHaveBeenCalledWith({ erro: "Erro de validação" });
+    expect(mockRes.json).toHaveBeenCalledWith({
+      ok: false,
+      message: "Erro de validação",
+    });
   });
 
   it("deve retornar erro genérico se não houver status nem mensagem", () => {
@@ -24,7 +27,8 @@ describe("errorHandler Middleware", () => {
 
     expect(mockRes.status).toHaveBeenCalledWith(500);
     expect(mockRes.json).toHaveBeenCalledWith({
-      erro: "Erro interno do servidor",
+      ok: false,
+      message: "Erro interno do servidor.",
     });
   });
 });

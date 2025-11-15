@@ -7,7 +7,7 @@ import { Request, Response, NextFunction } from "express";
 
 jest.mock("jsonwebtoken");
 
-describe("authMiddleware", () => {
+describe("Middleware - authMiddleware", () => {
   let req: Partial<AuthRequest>;
   let res: Partial<Response>;
   let next: NextFunction;
@@ -26,7 +26,8 @@ describe("authMiddleware", () => {
   it("deve retornar erro se o token não for fornecido", () => {
     authMiddleware(req as AuthRequest, res as Response, next);
     expect(next).toHaveBeenCalledWith({
-      status: 401,
+      statusCode: 401,
+      ok: false,
       message: "Token de autenticação não fornecido ou inválido.",
     });
   });
@@ -38,7 +39,8 @@ describe("authMiddleware", () => {
     authMiddleware(req as AuthRequest, res as Response, next);
 
     expect(next).toHaveBeenCalledWith({
-      status: 500,
+      statusCode: 500,
+      ok: false,
       message: "Erro interno de autenticação.",
     });
   });
@@ -62,7 +64,8 @@ describe("authMiddleware", () => {
     authMiddleware(req as AuthRequest, res as Response, next);
 
     expect(next).toHaveBeenCalledWith({
-      status: 401,
+      statusCode: 401,
+      ok: false,
       message: "Token inválido ou expirado.",
     });
   });

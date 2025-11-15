@@ -8,16 +8,21 @@ export const validarCamposTweet = (
   const content = req.body.content || req.body.conteudo;
 
   if (!content || typeof content !== "string" || !content.trim()) {
-    return res.status(400).json({ erro: "O conteúdo do tweet é obrigatório." });
+    return next({
+      statusCode: 400,
+      ok: false,
+      message: "O conteúdo do tweet é obrigatório.",
+    });
   }
 
-  const trimContent = content.trim();
-  if (trimContent.length > 280) {
-    return res
-      .status(400)
-      .json({ erro: "O tweet não pode ter mais de 280 caracteres." });
+  if (content.trim().length > 280) {
+    return next({
+      statusCode: 400,
+      ok: false,
+      message: "O tweet não pode ter mais de 280 caracteres.",
+    });
   }
 
-  req.body.content = trimContent;
+  req.body.content = content.trim();
   next();
 };
