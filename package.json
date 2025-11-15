@@ -1,7 +1,7 @@
 {
   "name": "api-growtwitter",
   "version": "1.0.0",
-  "description": "API REST de um jogo desenvolvida com Node.js, Express e Prisma ORM para operaÃ§Ãµes CRUD.",
+  "description": "API REST de um jogo desenvolvida com Node.js, Express e Prisma ORM para CRUD.",
   "main": "index.js",
   "scripts": {
     "test": "cross-env NODE_ENV=test jest --setupFilesAfterEnv ./tests/setup.ts --runInBand",
@@ -28,8 +28,7 @@
     "@types/express": "^5.0.4",
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.9.1",
-    "@types/uuid": "^11.0.0",
+    "@types/node": "^24.10.1",
     "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "jest": "^30.2.0",
