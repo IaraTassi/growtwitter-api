@@ -10,7 +10,9 @@ coverage/
 
 # Ambiente
 .env
+.env.dev
 .env.test
+.env.prod
 
 # Prisma
 prisma/dev.db
@@ -32,10 +34,4 @@ Thumbs.db
 
 /src/generated/prisma
 
-/src/generated/prisma
 
-/src/generated/prisma
-
-/src/generated/prisma
-
-/src/generated/prisma
