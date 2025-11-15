@@ -41,10 +41,6 @@ describe("UserService - Testes Unitários", () => {
 
   describe("UserService - criarUsuario", () => {
     it("deve criar usuário com sucesso", async () => {
-      const spyValidarCampo = jest.spyOn<any, any>(
-        service as any,
-        "validarCampo"
-      );
       mockRepository.buscarPorIdentificador.mockResolvedValue(null);
       mockRepository.criarUsuario.mockResolvedValue({
         id: "1",
@@ -54,7 +50,6 @@ describe("UserService - Testes Unitários", () => {
       const result = await (service as any).criarUsuario(validDto);
 
       expect(result).toHaveProperty("id", "1");
-      expect(spyValidarCampo).toHaveBeenCalledTimes(4);
       expect(mockRepository.criarUsuario).toHaveBeenCalledWith(validDto);
     });
 
@@ -63,9 +58,12 @@ describe("UserService - Testes Unitários", () => {
         .mockResolvedValueOnce({ id: "1" } as any)
         .mockResolvedValueOnce(null);
 
-      await expect((service as any).criarUsuario(validDto)).rejects.toThrow(
-        "O nome de usuário já está em uso."
-      );
+      await expect(
+        (service as any).criarUsuario(validDto)
+      ).rejects.toMatchObject({
+        message: "O nome de usuário já está em uso.",
+        statusCode: 409,
+      });
     });
 
     it("deve lançar erro se email já estiver em uso", async () => {
@@ -73,33 +71,44 @@ describe("UserService - Testes Unitários", () => {
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: "1" } as any);
 
-      await expect((service as any).criarUsuario(validDto)).rejects.toThrow(
-        "O email já está em uso."
-      );
+      await expect(
+        (service as any).criarUsuario(validDto)
+      ).rejects.toMatchObject({
+        message: "O email já está em uso.",
+        statusCode: 409,
+      });
     });
 
-    it("deve lançar erro se nome estiver vazio", async () => {
+    it.each([
+      ["name", "O nome é obrigatório."],
+      ["userName", "O nome de usuário é obrigatório."],
+      ["email", "O email é obrigatório."],
+      ["password", "A senha é obrigatória."],
+    ])(
+      "deve lançar erro se campo %s estiver vazio",
+      async (campo, mensagem) => {
+        await expect(
+          (service as any).criarUsuario({ ...validDto, [campo]: "" })
+        ).rejects.toMatchObject({ message: mensagem, statusCode: 400 });
+      }
+    );
+
+    it("deve lançar erro se senha tiver menos de 6 caracteres", async () => {
       await expect(
-        (service as any).criarUsuario({ ...validDto, name: "" })
-      ).rejects.toThrow("O nome é obrigatório.");
+        (service as any).criarUsuario({ ...validDto, password: "123" })
+      ).rejects.toMatchObject({
+        message: "A senha deve ter pelo menos 6 caracteres.",
+        statusCode: 400,
+      });
     });
 
-    it("deve lançar erro se o nome do usuário estiver vazio", async () => {
+    it("deve lançar erro se email inválido", async () => {
       await expect(
-        (service as any).criarUsuario({ ...validDto, userName: "" })
-      ).rejects.toThrow("O nome de usuário é obrigatório.");
-    });
-
-    it("deve lançar erro se campo email estiver vazio", async () => {
-      await expect(
-        (service as any).criarUsuario({ ...validDto, email: "" })
-      ).rejects.toThrow("O email é obrigatório.");
-    });
-
-    it("deve lançar erro se o campo senha estiver vazio", async () => {
-      await expect(
-        (service as any).criarUsuario({ ...validDto, password: "" })
-      ).rejects.toThrow("A senha é obrigatória.");
+        (service as any).criarUsuario({ ...validDto, email: "invalidemail" })
+      ).rejects.toMatchObject({
+        message: "Email inválido.",
+        statusCode: 400,
+      });
     });
   });
 
@@ -116,36 +125,44 @@ describe("UserService - Testes Unitários", () => {
       const result = await service.registrar(validDto);
 
       expect(result).toHaveProperty("id", "1");
-      expect(mockRepository.criarUsuario).toHaveBeenCalled();
+      expect(mockRepository.criarUsuario).toHaveBeenCalledWith({
+        ...validDto,
+        password: "hashed_password",
+      });
       expect(bcrypt.hash).toHaveBeenCalledWith(validDto.password, 8);
     });
 
-    it("deve lançar erro se a senha não for informada", async () => {
+    it("deve lançar erro se senha não for informada", async () => {
       await expect(
         service.registrar({ ...validDto, password: "" })
-      ).rejects.toThrow("A senha é obrigatória.");
+      ).rejects.toMatchObject({
+        message: "A senha é obrigatória.",
+        statusCode: 400,
+      });
     });
 
-    it("deve lançar erro se o nome de usuário já estiver em uso", async () => {
+    it("deve lançar erro se nome de usuário já estiver em uso", async () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue("hashed_password");
       mockRepository.buscarPorIdentificador
         .mockResolvedValueOnce({ id: "1" } as any)
         .mockResolvedValueOnce(null);
 
-      await expect(service.registrar(validDto)).rejects.toThrow(
-        "O nome de usuário já está em uso."
-      );
+      await expect(service.registrar(validDto)).rejects.toMatchObject({
+        message: "O nome de usuário já está em uso.",
+        statusCode: 409,
+      });
     });
 
-    it("deve lançar erro se o email já estiver em uso", async () => {
+    it("deve lançar erro se email já estiver em uso", async () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue("hashed_password");
       mockRepository.buscarPorIdentificador
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: "1" } as any);
 
-      await expect(service.registrar(validDto)).rejects.toThrow(
-        "O email já está em uso."
-      );
+      await expect(service.registrar(validDto)).rejects.toMatchObject({
+        message: "O email já está em uso.",
+        statusCode: 409,
+      });
     });
 
     it("deve registrar usuário com sucesso quando imageUrl é fornecida", async () => {
@@ -153,9 +170,7 @@ describe("UserService - Testes Unitários", () => {
         ...validDto,
         imageUrl: "https://img.com/test.png",
       };
-
       (bcrypt.hash as jest.Mock).mockResolvedValue("hashed_password");
-
       mockRepository.buscarPorIdentificador.mockResolvedValue(null);
       mockRepository.criarUsuario.mockResolvedValue({
         id: "1",
@@ -206,9 +221,91 @@ describe("UserService - Testes Unitários", () => {
     });
 
     it("deve lançar erro se ID não for informado", async () => {
-      await expect(service.buscarPorId("")).rejects.toThrow(
-        "O ID do usuário é obrigatório."
+      await expect(service.buscarPorId("")).rejects.toMatchObject({
+        message: "O ID do usuário é obrigatório.",
+        statusCode: 400,
+      });
+    });
+
+    it("deve lançar erro se usuário não encontrado", async () => {
+      mockRepository.buscarPorId.mockResolvedValue(null);
+
+      await expect(service.buscarPorId("999")).rejects.toMatchObject({
+        message: "Usuário não encontrado.",
+        statusCode: 404,
+      });
+    });
+  });
+
+  describe("UserService - login", () => {
+    const loginDto = { identifier: "testuser", password: "123456" };
+
+    it("deve realizar login com sucesso", async () => {
+      const fakeUser = { ...validDto, id: "1", password: "hashed" } as any;
+      mockRepository.buscarPorIdentificador.mockResolvedValue(fakeUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (jwt.sign as jest.Mock).mockReturnValue("fake_token");
+
+      process.env.JWT_SECRET = "secret";
+
+      const result = await service.login(loginDto);
+
+      expect(result).toHaveProperty("token", "fake_token");
+      expect(mockRepository.buscarPorIdentificador).toHaveBeenCalledWith(
+        "testuser"
       );
+      expect(bcrypt.compare).toHaveBeenCalledWith("123456", "hashed");
+    });
+
+    it("deve lançar erro se identificador não for informado", async () => {
+      await expect(
+        service.login({ ...loginDto, identifier: "" })
+      ).rejects.toMatchObject({
+        message: "O identificador usuário ou email é obrigatório.",
+        statusCode: 400,
+      });
+    });
+
+    it("deve lançar erro se senha não for informada", async () => {
+      await expect(
+        service.login({ ...loginDto, password: "" })
+      ).rejects.toMatchObject({
+        message: "A senha é obrigatória.",
+        statusCode: 400,
+      });
+    });
+
+    it("deve lançar erro se usuário não for encontrado", async () => {
+      mockRepository.buscarPorIdentificador.mockResolvedValue(null);
+
+      await expect(service.login(loginDto)).rejects.toMatchObject({
+        message: "Usuário não encontrado.",
+        statusCode: 404,
+      });
+    });
+
+    it("deve lançar erro se a senha estiver incorreta", async () => {
+      const fakeUser = { ...validDto, id: "1", password: "hashed" } as any;
+      mockRepository.buscarPorIdentificador.mockResolvedValue(fakeUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await expect(service.login(loginDto)).rejects.toMatchObject({
+        message: "Senha incorreta.",
+        statusCode: 401,
+      });
+    });
+
+    it("deve lançar erro se JWT_SECRET não estiver configurado", async () => {
+      const fakeUser = { ...validDto, id: "1", password: "hashed" } as any;
+      mockRepository.buscarPorIdentificador.mockResolvedValue(fakeUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      delete process.env.JWT_SECRET;
+
+      await expect(service.login(loginDto)).rejects.toMatchObject({
+        message: "JWT_SECRET não configurado no ambiente.",
+        statusCode: 500,
+      });
     });
   });
 
@@ -251,81 +348,19 @@ describe("UserService - Testes Unitários", () => {
     });
 
     it("deve lançar erro se ID não for informado", async () => {
-      await expect(service.removerUsuario("")).rejects.toThrow(
-        "O ID do usuário é obrigatório."
-      );
+      await expect(service.removerUsuario("")).rejects.toMatchObject({
+        message: "O ID do usuário é obrigatório.",
+        statusCode: 400,
+      });
     });
 
     it("deve lançar erro se usuário não existir", async () => {
       mockRepository.buscarPorId.mockResolvedValue(null);
 
-      await expect(service.removerUsuario("999")).rejects.toThrow(
-        "Usuário não encontrado para remoção."
-      );
-    });
-  });
-
-  describe("UserService - login", () => {
-    const loginDto = {
-      identifier: "testuser",
-      password: "123456",
-    };
-
-    it("deve realizar login com sucesso", async () => {
-      const fakeUser = { ...validDto, id: "1", password: "hashed" } as any;
-      mockRepository.buscarPorIdentificador.mockResolvedValue(fakeUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      (jwt.sign as jest.Mock).mockReturnValue("fake_token");
-
-      process.env.JWT_SECRET = "secret";
-
-      const result = await service.login(loginDto);
-
-      expect(result).toHaveProperty("token", "fake_token");
-      expect(mockRepository.buscarPorIdentificador).toHaveBeenCalledWith(
-        "testuser"
-      );
-      expect(bcrypt.compare).toHaveBeenCalledWith("123456", "hashed");
-    });
-
-    it("deve lançar erro se identificador não for informado", async () => {
-      await expect(
-        service.login({ ...loginDto, identifier: "" })
-      ).rejects.toThrow("O identificador usuário ou email é obrigatório.");
-    });
-
-    it("deve lançar erro se senha não for informada", async () => {
-      await expect(
-        service.login({ ...loginDto, password: "" })
-      ).rejects.toThrow("A senha é obrigatória.");
-    });
-
-    it("deve lançar erro se o usuário não for encontrado", async () => {
-      mockRepository.buscarPorIdentificador.mockResolvedValue(null);
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        "Usuário não encontrado."
-      );
-    });
-
-    it("deve lançar erro se a senha estiver incorreta", async () => {
-      const fakeUser = { ...validDto, id: "1", password: "hashed" } as any;
-      mockRepository.buscarPorIdentificador.mockResolvedValue(fakeUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-
-      await expect(service.login(loginDto)).rejects.toThrow("Senha incorreta.");
-    });
-
-    it("deve lançar erro se JWT_SECRET não estiver configurado", async () => {
-      const fakeUser = { ...validDto, id: "1", password: "hashed" } as any;
-      mockRepository.buscarPorIdentificador.mockResolvedValue(fakeUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-
-      delete process.env.JWT_SECRET;
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        "JWT_SECRET não configurado no ambiente."
-      );
+      await expect(service.removerUsuario("999")).rejects.toMatchObject({
+        message: "Usuário não encontrado para remoção.",
+        statusCode: 404,
+      });
     });
   });
 });

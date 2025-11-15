@@ -9,7 +9,6 @@ export class TweetController {
     try {
       const userId = req.userId;
       const { content } = req.body;
-
       const tweet = await tweetService.criarTweet({ content }, userId!);
 
       return res.status(201).json({
@@ -22,18 +21,25 @@ export class TweetController {
     }
   }
 
+  public async buscarPorId(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { id } = req.params;
+      const tweet = await tweetService.buscarPorId(id);
+      res.status(200).json({ ok: true, data: tweet });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async criarReply(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.userId;
       const { content } = req.body;
       const { parentId } = req.params;
-
-      if (!parentId) {
-        return res
-          .status(400)
-          .json({ erro: "O ID do tweet original é obrigatório." });
-      }
-
       const reply = await tweetService.criarReply(
         { content, parentId },
         userId!
@@ -56,6 +62,7 @@ export class TweetController {
 
       return res.status(200).json({
         ok: true,
+        message: "Feed buscado com sucesso.",
         feed,
       });
     } catch (error) {

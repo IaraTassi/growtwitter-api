@@ -7,12 +7,21 @@ type FollowComRelacoes = PrismaFollow & {
   following?: PrismaUser;
 };
 
-export function mapFollow(follow: FollowComRelacoes): Follow {
+export function mapFollow(follow: FollowComRelacoes, shallow = false): Follow {
   return {
     followerId: follow.followerId,
     followingId: follow.followingId,
     createdAt: follow.createdAt,
-    follower: follow.follower ? mapUser(follow.follower) : undefined,
-    following: follow.following ? mapUser(follow.following) : undefined,
+
+    follower: shallow
+      ? undefined
+      : follow.follower
+      ? mapUser(follow.follower, true)
+      : undefined,
+    following: shallow
+      ? undefined
+      : follow.following
+      ? mapUser(follow.following, true)
+      : undefined,
   };
 }
