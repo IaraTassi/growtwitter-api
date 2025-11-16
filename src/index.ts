@@ -1,10 +1,10 @@
-﻿import * as dotenv from "dotenv";
+import * as dotenv from "dotenv";
 dotenv.config();
 
 import app from "./app";
 
-const porta = process.env.PORT || 3000;
+const PORT: number = Number(process.env.PORT) || 3000;
 
-app.listen(porta, () => {
-  console.log(`Servidor rodando na porta ${porta}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });

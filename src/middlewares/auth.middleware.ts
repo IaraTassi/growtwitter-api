@@ -14,7 +14,8 @@ export const authMiddleware = (
 
   if (!authHeader?.startsWith("Bearer ")) {
     return next({
-      status: 401,
+      statusCode: 401,
+      ok: false,
       message: "Token de autenticação não fornecido ou inválido.",
     });
   }
@@ -24,7 +25,8 @@ export const authMiddleware = (
 
   if (!secret) {
     return next({
-      status: 500,
+      statusCode: 500,
+      ok: false,
       message: "Erro interno de autenticação.",
     });
   }
@@ -34,6 +36,10 @@ export const authMiddleware = (
     req.userId = payload.id;
     next();
   } catch (err) {
-    next({ status: 401, message: "Token inválido ou expirado." });
+    next({
+      statusCode: 401,
+      ok: false,
+      message: "Token inválido ou expirado.",
+    });
   }
 };

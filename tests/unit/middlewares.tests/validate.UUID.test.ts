@@ -1,6 +1,6 @@
 import { validateUUIDParams } from "../../../src/middlewares/validate.UUID.middleware";
 
-describe("validateUUIDParams Middleware", () => {
+describe("Middleware - validateUUIDParams", () => {
   const mockRes: any = {};
   const mockNext = jest.fn();
 
@@ -18,7 +18,8 @@ describe("validateUUIDParams Middleware", () => {
     const mockReq: any = { params: { id: "1234" } };
     validateUUIDParams(mockReq, mockRes, mockNext);
     expect(mockNext).toHaveBeenCalledWith({
-      status: 400,
+      statusCode: 400,
+      ok: false,
       message:
         'O parâmetro "id" é inválido ou ausente. Deve ser um UUID válido.',
     });
@@ -39,7 +40,8 @@ describe("validateUUIDParams Middleware", () => {
     const mockReq: any = { params: { id: "   " } };
     validateUUIDParams(mockReq, mockRes, mockNext);
     expect(mockNext).toHaveBeenCalledWith({
-      status: 400,
+      statusCode: 400,
+      ok: false,
       message:
         'O parâmetro "id" é inválido ou ausente. Deve ser um UUID válido.',
     });

@@ -12,8 +12,8 @@ import { authMiddleware } from "../middlewares/auth.middleware";
  * -------------
  * POST     /                    → criarUsuario()
  * POST     /login               → login()
- * GET      /:userId             → buscarPorId()
  * GET      /                    → listarUsuarios()
+ * GET      /:userId             → buscarPorId()
  * DELETE   /:userId             → removerUsuaerio()
  */
 
@@ -23,18 +23,22 @@ const userRoutes = Router();
 userRoutes.post("/", validarCamposUser, (req, res, next) =>
   userController.criarUsuario(req, res, next)
 );
+
 userRoutes.post("/login", validarCamposLogin, (req, res, next) =>
   userController.login(req, res, next)
 );
+
+userRoutes.get("/", (req, res, next) =>
+  userController.listarUsuarios(req, res, next)
+);
+
 userRoutes.get(
   "/:userId",
   authMiddleware,
   validateUUIDParams,
   (req, res, next) => userController.buscarPorId(req, res, next)
 );
-userRoutes.get("/", (req, res, next) =>
-  userController.listarUsuarios(req, res, next)
-);
+
 userRoutes.delete(
   "/:userId",
   authMiddleware,

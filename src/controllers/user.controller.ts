@@ -7,12 +7,13 @@ export class UserController {
   async criarUsuario(req: Request, res: Response, next: NextFunction) {
     try {
       const user = await userService.registrar(req.body);
+
       return res.status(201).json({
         ok: true,
         message: "Usuário criado com sucesso.",
         user,
       });
-    } catch (error: any) {
+    } catch (error) {
       next(error);
     }
   }
@@ -22,19 +23,12 @@ export class UserController {
       const { userId } = req.params;
       const user = await userService.buscarPorId(userId);
 
-      if (!user) {
-        return res.status(404).json({
-          ok: false,
-          message: "Usuário não encontrado.",
-        });
-      }
-
       return res.status(200).json({
         ok: true,
         message: "Usuário encontrado com sucesso.",
         user,
       });
-    } catch (error: any) {
+    } catch (error) {
       next(error);
     }
   }
@@ -42,25 +36,13 @@ export class UserController {
   async listarUsuarios(req: Request, res: Response, next: NextFunction) {
     try {
       const users = await userService.listarUsuarios();
+
       return res.status(200).json({
         ok: true,
         message: "Lista de usuários obtida com sucesso.",
         users,
       });
-    } catch (error: any) {
-      next(error);
-    }
-  }
-
-  async removerUsuario(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { userId } = req.params;
-      await userService.removerUsuario(userId);
-      return res.status(200).json({
-        ok: true,
-        message: "Usuário removido com sucesso.",
-      });
-    } catch (error: any) {
+    } catch (error) {
       next(error);
     }
   }
@@ -76,13 +58,21 @@ export class UserController {
         user,
         token,
       });
-    } catch (error: any) {
-      if (
-        error.message?.includes("Senha") ||
-        error.message?.includes("Usuário")
-      ) {
-        return res.status(401).json({ ok: false, message: error.message });
-      }
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async removerUsuario(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req.params;
+      await userService.removerUsuario(userId);
+
+      return res.status(200).json({
+        ok: true,
+        message: "Usuário removido com sucesso.",
+      });
+    } catch (error) {
       next(error);
     }
   }

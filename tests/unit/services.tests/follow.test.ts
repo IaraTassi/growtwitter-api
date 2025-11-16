@@ -1,10 +1,13 @@
 import { FollowService } from "../../../src/services/follow.service";
 import { FollowRepository } from "../../../src/repositories/follow.repository";
 import { Follow } from "../../../src/interfaces/follow.interface";
+import { UserRepository } from "../../../src/repositories/user.repository";
+import { User } from "../../../src/interfaces/user.interface";
 
 describe("FollowService - Testes Unitários", () => {
   let service: FollowService;
-  let mockRepository: jest.Mocked<FollowRepository>;
+  let mockFollowRepository: Partial<jest.Mocked<FollowRepository>>;
+  let mockUserRepository: Partial<jest.Mocked<UserRepository>>;
 
   const seguidorId = "user1";
   const seguindoId = "user2";
@@ -17,145 +20,276 @@ describe("FollowService - Testes Unitários", () => {
     following: undefined,
   };
 
+  const mockSeguidor: User = {
+    id: seguidorId,
+    name: "Usuário Seguidor",
+    email: "seguidor@example.com",
+    userName: "seguidor",
+    password: "hashedpassword",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const mockSeguido: User = {
+    id: seguindoId,
+    name: "Usuário Seguido",
+    email: "seguido@example.com",
+    userName: "seguido",
+    password: "hashedpassword",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
   beforeEach(() => {
-    mockRepository = {
+    mockFollowRepository = {
       buscarFollow: jest.fn(),
       seguirUsuario: jest.fn(),
       deixarDeSeguirUsuario: jest.fn(),
-    } as jest.Mocked<FollowRepository>;
+    };
+
+    mockUserRepository = {
+      buscarPorId: jest.fn((id: string) => {
+        if (id === seguidorId) return Promise.resolve(mockSeguidor);
+        if (id === seguindoId) return Promise.resolve(mockSeguido);
+        return Promise.resolve(null);
+      }),
+    };
 
     service = new FollowService();
-    service.setRepositoryParaTestes(mockRepository);
+    service.setRepositoryParaTestes(
+      mockFollowRepository as jest.Mocked<FollowRepository>,
+      mockUserRepository as jest.Mocked<UserRepository>
+    );
+
     jest.clearAllMocks();
-  });
-
-  describe("FollowService - buscarFollow", () => {
-    it("deve retornar o follow encontrado com sucesso", async () => {
-      mockRepository.buscarFollow.mockResolvedValue(followMock);
-
-      const result = await service.buscarFollow("user1", "user2");
-
-      expect(result).toEqual(followMock);
-      expect(mockRepository.buscarFollow).toHaveBeenCalledWith(
-        "user1",
-        "user2"
-      );
-    });
-
-    it("deve retornar null se o follow não existir", async () => {
-      mockRepository.buscarFollow.mockResolvedValue(null);
-
-      const result = await service.buscarFollow("user1", "user2");
-
-      expect(result).toBeNull();
-      expect(mockRepository.buscarFollow).toHaveBeenCalledWith(
-        "user1",
-        "user2"
-      );
-    });
-
-    it("deve lançar erro se o ID do seguidor não for informado", async () => {
-      await expect(service.buscarFollow("", "user2")).rejects.toThrow(
-        "O ID do seguidor é obrigatório."
-      );
-    });
-
-    it("deve lançar erro se o ID do seguido não for informado", async () => {
-      await expect(service.buscarFollow("user1", "")).rejects.toThrow(
-        "O ID do usuário seguido é obrigatório."
-      );
-    });
   });
 
   describe("FollowService - seguirUsuario", () => {
     it("deve seguir um usuário com sucesso", async () => {
-      mockRepository.buscarFollow.mockResolvedValue(null);
-      mockRepository.seguirUsuario.mockResolvedValue(followMock);
+      mockFollowRepository.buscarFollow!.mockResolvedValue(null);
+      mockFollowRepository.seguirUsuario!.mockResolvedValue(followMock);
 
       const result = await service.seguirUsuario(
-        { followingId: "user2" },
-        "user1"
+        { followingId: seguindoId },
+        seguidorId
       );
 
       expect(result).toEqual(followMock);
-      expect(mockRepository.buscarFollow).toHaveBeenCalledWith(
-        "user1",
-        "user2"
+      expect(mockFollowRepository.buscarFollow).toHaveBeenCalledWith(
+        seguidorId,
+        seguindoId
       );
-      expect(mockRepository.seguirUsuario).toHaveBeenCalledWith(
-        "user1",
-        "user2"
+      expect(mockFollowRepository.seguirUsuario).toHaveBeenCalledWith(
+        seguidorId,
+        seguindoId
       );
     });
 
     it("deve lançar erro se já estiver seguindo o usuário", async () => {
-      mockRepository.buscarFollow.mockResolvedValue(followMock);
+      mockFollowRepository.buscarFollow!.mockResolvedValue(followMock);
 
       await expect(
-        service.seguirUsuario({ followingId: "user2" }, "user1")
-      ).rejects.toThrow("O usuário já está seguindo este perfil.");
+        service.seguirUsuario({ followingId: seguindoId }, seguidorId)
+      ).rejects.toMatchObject({
+        message: "O usuário já está seguindo este perfil.",
+        statusCode: 409,
+      });
     });
 
     it("deve lançar erro se seguidor não for informado", async () => {
       await expect(
-        service.seguirUsuario({ followingId: "user2" }, "")
-      ).rejects.toThrow("O ID do seguidor é obrigatório.");
+        service.seguirUsuario({ followingId: seguindoId }, "")
+      ).rejects.toMatchObject({
+        message: "O ID do seguidor é obrigatório.",
+        statusCode: 400,
+      });
     });
 
     it("deve lançar erro se seguindo não for informado", async () => {
       await expect(
-        service.seguirUsuario({ followingId: "" }, "user1")
-      ).rejects.toThrow("O ID do usuário a ser seguido é obrigatório.");
+        service.seguirUsuario({ followingId: "" }, seguidorId)
+      ).rejects.toMatchObject({
+        message: "O ID do usuário a ser seguido é obrigatório.",
+        statusCode: 400,
+      });
     });
 
     it("deve lançar erro ao tentar seguir a si mesmo", async () => {
       await expect(
-        service.seguirUsuario({ followingId: "user1" }, "user1")
-      ).rejects.toThrow("Um usuário não pode seguir a si mesmo.");
+        service.seguirUsuario({ followingId: seguidorId }, seguidorId)
+      ).rejects.toMatchObject({
+        message: "Um usuário não pode seguir a si mesmo.",
+        statusCode: 409,
+      });
+    });
+
+    it("deve lançar erro se seguidor não existir", async () => {
+      mockUserRepository.buscarPorId!.mockResolvedValueOnce(null);
+      await expect(
+        service.seguirUsuario({ followingId: seguindoId }, seguidorId)
+      ).rejects.toMatchObject({
+        message: "Usuário não encontrado.",
+        statusCode: 404,
+      });
+    });
+
+    it("deve lançar erro se seguindo não existir", async () => {
+      mockUserRepository.buscarPorId!.mockImplementationOnce((id: string) =>
+        id === seguidorId
+          ? Promise.resolve(mockSeguidor)
+          : Promise.resolve(null)
+      );
+      await expect(
+        service.seguirUsuario({ followingId: "invalid" }, seguidorId)
+      ).rejects.toMatchObject({
+        message: "Usuário não encontrado.",
+        statusCode: 404,
+      });
+    });
+  });
+
+  describe("FollowService - buscarFollow", () => {
+    it("deve retornar o follow encontrado com sucesso", async () => {
+      mockFollowRepository.buscarFollow!.mockResolvedValue(followMock);
+
+      const result = await service.buscarFollow(seguidorId, seguindoId);
+
+      expect(result).toEqual(followMock);
+      expect(mockFollowRepository.buscarFollow).toHaveBeenCalledWith(
+        seguidorId,
+        seguindoId
+      );
+    });
+
+    it("deve lançar erro 404 se o follow não existir", async () => {
+      mockFollowRepository.buscarFollow!.mockResolvedValue(null);
+
+      await expect(
+        service.buscarFollow(seguidorId, seguindoId)
+      ).rejects.toMatchObject({
+        message: "Follow não encontrado.",
+        statusCode: 404,
+      });
+    });
+
+    it("deve lançar erro se seguidor não for informado", async () => {
+      await expect(service.buscarFollow("", seguindoId)).rejects.toMatchObject({
+        message: "O ID do seguidor é obrigatório.",
+        statusCode: 400,
+      });
+    });
+
+    it("deve lançar erro se seguindo não for informado", async () => {
+      await expect(service.buscarFollow(seguidorId, "")).rejects.toMatchObject({
+        message: "O ID do usuário a ser seguido é obrigatório.",
+        statusCode: 400,
+      });
+    });
+
+    it("deve lançar erro se seguidor não existir", async () => {
+      mockUserRepository.buscarPorId!.mockResolvedValueOnce(null);
+      await expect(
+        service.buscarFollow(seguidorId, seguindoId)
+      ).rejects.toMatchObject({
+        message: "Usuário não encontrado.",
+        statusCode: 404,
+      });
+    });
+
+    it("deve lançar erro se seguindo não existir", async () => {
+      mockUserRepository.buscarPorId!.mockImplementationOnce((id: string) =>
+        id === seguidorId
+          ? Promise.resolve(mockSeguidor)
+          : Promise.resolve(null)
+      );
+      await expect(
+        service.buscarFollow(seguidorId, "invalid")
+      ).rejects.toMatchObject({
+        message: "Usuário não encontrado.",
+        statusCode: 404,
+      });
     });
   });
 
   describe("FollowService - deixarDeSeguirUsuario", () => {
     it("deve deixar de seguir um usuário com sucesso", async () => {
-      mockRepository.buscarFollow.mockResolvedValue(followMock);
-      mockRepository.deixarDeSeguirUsuario.mockResolvedValue();
+      mockFollowRepository.buscarFollow!.mockResolvedValue(followMock);
+      mockFollowRepository.deixarDeSeguirUsuario!.mockResolvedValue();
 
-      await service.deixarDeSeguirUsuario("user1", "user2");
+      await service.deixarDeSeguirUsuario(seguidorId, seguindoId);
 
-      expect(mockRepository.buscarFollow).toHaveBeenCalledWith(
-        "user1",
-        "user2"
+      expect(mockFollowRepository.buscarFollow).toHaveBeenCalledWith(
+        seguidorId,
+        seguindoId
       );
-      expect(mockRepository.deixarDeSeguirUsuario).toHaveBeenCalledWith(
-        "user1",
-        "user2"
+      expect(mockFollowRepository.deixarDeSeguirUsuario).toHaveBeenCalledWith(
+        seguidorId,
+        seguindoId
       );
     });
 
     it("deve lançar erro se não estiver seguindo o usuário", async () => {
-      mockRepository.buscarFollow.mockResolvedValue(null);
+      mockFollowRepository.buscarFollow!.mockResolvedValue(null);
 
       await expect(
-        service.deixarDeSeguirUsuario("user1", "user2")
-      ).rejects.toThrow("O usuário não segue este perfil.");
+        service.deixarDeSeguirUsuario(seguidorId, seguindoId)
+      ).rejects.toMatchObject({
+        message: "O usuário não segue este perfil.",
+        statusCode: 404,
+      });
     });
 
     it("deve lançar erro se seguidor não for informado", async () => {
-      await expect(service.deixarDeSeguirUsuario("", "user2")).rejects.toThrow(
-        "O ID do seguidor é obrigatório."
-      );
+      await expect(
+        service.deixarDeSeguirUsuario("", seguindoId)
+      ).rejects.toMatchObject({
+        message: "O ID do seguidor é obrigatório.",
+        statusCode: 400,
+      });
     });
 
     it("deve lançar erro se seguindo não for informado", async () => {
-      await expect(service.deixarDeSeguirUsuario("user1", "")).rejects.toThrow(
-        "O ID do usuário a ser deixado de seguir é obrigatório."
-      );
+      await expect(
+        service.deixarDeSeguirUsuario(seguidorId, "")
+      ).rejects.toMatchObject({
+        message: "O ID do usuário a ser deixado de seguir é obrigatório.",
+        statusCode: 400,
+      });
     });
 
     it("deve lançar erro ao tentar deixar de seguir a si mesmo", async () => {
+      mockFollowRepository!.buscarFollow!.mockResolvedValue(null);
+
       await expect(
-        service.deixarDeSeguirUsuario("user1", "user1")
-      ).rejects.toThrow("Um usuário não pode deixar de seguir a si mesmo.");
+        service.deixarDeSeguirUsuario(seguidorId, seguidorId)
+      ).rejects.toMatchObject({
+        message: "Um usuário não pode deixar de seguir a si mesmo.",
+        statusCode: 409,
+      });
+    });
+
+    it("deve lançar erro se seguidor não existir", async () => {
+      mockUserRepository.buscarPorId!.mockResolvedValueOnce(null);
+      await expect(
+        service.deixarDeSeguirUsuario(seguidorId, seguindoId)
+      ).rejects.toMatchObject({
+        message: "Usuário não encontrado.",
+        statusCode: 404,
+      });
+    });
+
+    it("deve lançar erro se seguindo não existir", async () => {
+      mockUserRepository.buscarPorId!.mockImplementationOnce((id: string) =>
+        id === seguidorId
+          ? Promise.resolve(mockSeguidor)
+          : Promise.resolve(null)
+      );
+      await expect(
+        service.deixarDeSeguirUsuario(seguidorId, "invalid")
+      ).rejects.toMatchObject({
+        message: "Usuário não encontrado.",
+        statusCode: 404,
+      });
     });
   });
 });

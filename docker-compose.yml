@@ -1,7 +1,7 @@
-﻿version: "3.9"
+version: "3.9"
 
 services:
-  # === Desenvolvimento ===
+  # ===== Desenvolvimento =====
   app_dev:
     build: .
     container_name: growtwitter_app_dev
@@ -11,14 +11,12 @@ services:
       - .env
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@growtwitter_db_dev:5432/growtwitter?schema=public
+      - DATABASE_URL=postgresql://postgres:postgres@db_dev:5432/growtwitter?schema=public
     volumes:
       - .:/app
     depends_on:
       - db_dev
-    command: ["/usr/local/bin/docker-entrypoint.sh"]
-    networks:
-      - dev_network
+    command: sh -c "npx prisma generate && npm run dev"
 
   db_dev:
     image: postgres:15
@@ -32,10 +30,8 @@ services:
       - "5432:5432"
     volumes:
       - growtwitter_postgres_data:/var/lib/postgresql/data
-    networks:
-      - dev_network
 
-  # === Testes ===
+  # ===== Testes =====
   app_test:
     build: .
     container_name: growtwitter_app_test
@@ -43,14 +39,12 @@ services:
       - .env.test
     environment:
       - NODE_ENV=test
-      - DATABASE_URL=postgresql://postgres:postgres@growtwitter_db_test:5432/growtwitter_test?schema=public
+      - DATABASE_URL=postgresql://postgres:postgres@db_test:5432/growtwitter_test?schema=public
     volumes:
       - .:/app
     depends_on:
       - db_test
-    command: ["/usr/local/bin/docker-entrypoint.sh"]
-    networks:
-      - test_network
+    command: sh -c "npx prisma generate && npm run test:docker"
 
   db_test:
     image: postgres:15
@@ -64,13 +58,7 @@ services:
       - "5433:5432"
     volumes:
       - growtwitter_postgres_test_data:/var/lib/postgresql/data
-    networks:
-      - test_network
 
 volumes:
   growtwitter_postgres_data:
   growtwitter_postgres_test_data:
-
-networks:
-  dev_network:
-  test_network:
