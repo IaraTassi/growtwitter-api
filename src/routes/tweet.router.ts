@@ -1,7 +1,10 @@
 import { authMiddleware } from "./../middlewares/auth.middleware";
 import { Router } from "express";
 import { TweetController } from "../controllers/tweet.controller";
-import { validarCamposTweet } from "../middlewares/tweet.middleware";
+import {
+  validarCamposReply,
+  validarCamposTweet,
+} from "../middlewares/tweet.middleware";
 import { validateUUIDParams } from "../middlewares/validate.UUID.middleware";
 
 /**
@@ -26,12 +29,13 @@ tweetRoutes.post("/", authMiddleware, validarCamposTweet, (req, res, next) =>
 
 tweetRoutes.post(
   "/:parentId/reply",
+  validateUUIDParams,
   authMiddleware,
-  validarCamposTweet,
+  validarCamposReply,
   (req, res, next) => tweetController.criarReply(req, res, next)
 );
 
-tweetRoutes.get("/:id", validateUUIDParams, (req, res, next) =>
+tweetRoutes.get("/:id", validateUUIDParams, authMiddleware, (req, res, next) =>
   tweetController.buscarPorId(req, res, next)
 );
 

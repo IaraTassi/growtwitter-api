@@ -18,6 +18,7 @@ const likeController = new LikeController();
 likeRoutes.post(
   "/:tweetId",
   authMiddleware,
+  validarCamposLike,
   validateUUIDParams,
   (req, res, next) => likeController.adicionarLike(req, res, next)
 );
