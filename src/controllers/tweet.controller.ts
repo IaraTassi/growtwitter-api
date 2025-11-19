@@ -21,15 +21,16 @@ export class TweetController {
     }
   }
 
-  public async buscarPorId(
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction
-  ) {
+  async buscarPorId(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const tweet = await tweetService.buscarPorId(id);
-      res.status(200).json({ ok: true, data: tweet });
+
+      return res.status(200).json({
+        ok: true,
+        tweet,
+        message: "Tweet buscado com sucesso.",
+      });
     } catch (err) {
       next(err);
     }
