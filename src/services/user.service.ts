@@ -27,11 +27,24 @@ export class UserService {
     if (!regex.test(email)) throw new AppError("Email inválido.", 400);
   }
 
+  private validarImageUrl(url?: string) {
+    if (!url) return;
+    try {
+      const parsed = new URL(url);
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        throw new Error();
+      }
+    } catch {
+      throw new AppError("A URL da imagem é inválida.", 400);
+    }
+  }
+
   private async criarUsuario(dto: CreateUserDto): Promise<User> {
     this.validarCampo(dto.name, "O nome é obrigatório.");
     this.validarCampo(dto.userName, "O nome de usuário é obrigatório.");
     this.validarCampo(dto.email, "O email é obrigatório.");
     this.validarCampo(dto.password, "A senha é obrigatória.");
+    this.validarImageUrl(dto.imageUrl);
 
     if (dto.password.length < 6)
       throw new AppError("A senha deve ter pelo menos 6 caracteres.", 400);

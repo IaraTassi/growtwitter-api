@@ -27,7 +27,7 @@ export function mapUser(user: UsuarioComRelacoes, shallow = false): User {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
 
-    tweets: shallow ? undefined : user.tweets?.map((t) => mapTweet(t, true)),
+    tweets: shallow ? undefined : user.tweets?.map((t) => mapTweet(t, 1)),
     likes: shallow ? undefined : user.likes?.map((l) => mapLike(l, true)),
     followers: shallow
       ? undefined

@@ -32,7 +32,16 @@ export const authMiddleware = (
   }
 
   try {
-    const payload = jwt.verify(token, secret) as { id: string };
+    const payload = jwt.verify(token, secret) as { id?: string };
+
+    if (!payload.id) {
+      return next({
+        statusCode: 401,
+        ok: false,
+        message: "Usuário não encontrado no token.",
+      });
+    }
+
     req.userId = payload.id;
     next();
   } catch (err) {
