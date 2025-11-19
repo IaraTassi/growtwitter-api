@@ -1,31 +1,26 @@
-# Usando imagem leve do Node
-FROM node:20-alpine
+FROM node:20-alpine AS base
 
-# Diretório de trabalho
+# Diretório onde ficará a app dentro do container
 WORKDIR /app
 
-# Copia dependências primeiro (para cache)
+# Copia apenas os arquivos essenciais primeiro (melhor cache)
 COPY package*.json ./
+COPY prisma ./prisma
 
-# Instala dependências
+# Instala dependências (inclui Prisma Client)
 RUN npm install
 
-# Copia o restante do projeto
+# Copia o restante do código da aplicação
 COPY . .
 
-# Gera cliente Prisma
+# Gera Prisma Client compilado para produção
 RUN npx prisma generate
 
-# Copia e dá permissão ao entrypoint customizado
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Build da aplicação (gera dist/)
+RUN npm run build
 
-# Expõe a porta padrão do app
+# Expõe a porta usada pela aplicação (Render ignora mas é boa prática)
 EXPOSE 3000
 
-# Define variável padrão (pode ser sobrescrita no Compose ou Render)
-ARG NODE_ENV=development
-ENV NODE_ENV=${NODE_ENV}
-
-# Usa JSON form para respeitar sinais e boas práticas Docker
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+# Comando de inicialização
+CMD ["npm", "start"]
