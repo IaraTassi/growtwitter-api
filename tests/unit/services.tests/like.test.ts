@@ -241,4 +241,60 @@ describe("LikeService - Testes Unitários", () => {
       });
     });
   });
+
+  describe("LikeService - alternarLike", () => {
+    it("deve adicionar um like se não existir", async () => {
+      mockLikeRepository.buscarLike!.mockResolvedValue(null);
+      mockLikeRepository.adicionarLike!.mockResolvedValue(mockLike);
+
+      const result = await service.alternarLike("tweet123", "user1");
+
+      expect(result).toEqual(mockLike);
+    });
+
+    it("deve remover um like se já existir", async () => {
+      mockLikeRepository.buscarLike!.mockResolvedValue(mockLike);
+      mockLikeRepository.removerLike!.mockResolvedValue();
+
+      const result = await service.alternarLike("tweet123", "user1");
+
+      expect(result).toBeNull();
+    });
+
+    it("deve lançar erro se o ID do tweet não for informado", async () => {
+      await expect(service.alternarLike("", "user1")).rejects.toMatchObject({
+        message: "O ID do tweet é obrigatório.",
+        statusCode: 400,
+      });
+    });
+
+    it("deve lançar erro se o ID do usuário não for informado", async () => {
+      await expect(service.alternarLike("tweet123", "")).rejects.toMatchObject({
+        message: "O ID do usuário é obrigatório.",
+        statusCode: 400,
+      });
+    });
+
+    it("deve lançar erro se o usuário não existir", async () => {
+      mockUserRepository.buscarPorId!.mockResolvedValue(null);
+
+      await expect(
+        service.alternarLike("tweet123", "user1")
+      ).rejects.toMatchObject({
+        message: "Usuário não encontrado.",
+        statusCode: 404,
+      });
+    });
+
+    it("deve lançar erro se o tweet não existir", async () => {
+      mockTweetRepository.buscarPorId!.mockResolvedValue(null);
+
+      await expect(
+        service.alternarLike("tweet123", "user1")
+      ).rejects.toMatchObject({
+        message: "Tweet não encontrado.",
+        statusCode: 404,
+      });
+    });
+  });
 });
