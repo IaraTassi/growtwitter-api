@@ -51,4 +51,23 @@ export class LikeController {
       next(error);
     }
   }
+
+  async alternarLike(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.userId!;
+      const { tweetId } = req.params;
+
+      const result = await likeService.alternarLike(tweetId, userId);
+
+      return res.status(200).json({
+        ok: true,
+        message: result
+          ? "Like adicionado com sucesso."
+          : "Like removido com sucesso.",
+        like: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
