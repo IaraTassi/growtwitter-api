@@ -10,6 +10,7 @@ import { validateUUIDParams } from "../middlewares/validate.UUID.middleware";
  * POST    /:tweetid               → adicionarLike()
  * GET     /:tweetId               → buscarLike()
  * DELETE  /:tweetId               → removerLike()
+ * PATCH   /:tweetId               → alternarLike()
  */
 
 const likeRoutes = Router();
@@ -35,6 +36,13 @@ likeRoutes.delete(
   authMiddleware,
   validateUUIDParams,
   (req, res, next) => likeController.removerLike(req, res, next)
+);
+
+likeRoutes.patch(
+  "/:tweetId",
+  authMiddleware,
+  validateUUIDParams,
+  (req, res, next) => likeController.alternarLike(req, res, next)
 );
 
 export default likeRoutes;
