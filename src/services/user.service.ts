@@ -64,7 +64,7 @@ export class UserService {
     return this.userRepository.criarUsuario(dto);
   }
 
-  async registrar(dto: CreateUserDto): Promise<User> {
+  async registrar(dto: CreateUserDto): Promise<Omit<User, "password">> {
     this.validarCampo(dto.password, "A senha é obrigatória.");
     this.validarCampo(dto.email, "O email é obrigatório.");
 
@@ -74,7 +74,13 @@ export class UserService {
 
     const senhaCriptografada = await bcrypt.hash(dto.password, 8);
 
-    return this.criarUsuario({ ...dto, password: senhaCriptografada });
+    const usuarioCriado = await this.criarUsuario({
+      ...dto,
+      password: senhaCriptografada,
+    });
+
+    const { password, ...usuarioSemSenha } = usuarioCriado;
+    return usuarioSemSenha;
   }
 
   async buscarPorId(id: string): Promise<User> {
