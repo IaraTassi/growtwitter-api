@@ -28,12 +28,11 @@ export class TweetRepository {
       where: { id },
       include: {
         user: true,
-        likes: { include: { user: true, tweet: true } },
+        likes: { include: { user: true } },
         replies: {
           include: {
             user: true,
             likes: { include: { user: true } },
-            replies: true,
           },
         },
       },
@@ -55,15 +54,24 @@ export class TweetRepository {
     const followingIds = following.map((f) => f.followingId);
 
     const tweets = await prisma.tweet.findMany({
-      where: { userId: { in: [userId, ...followingIds] } },
+      where: {
+        userId: { in: [userId, ...followingIds] },
+        parentId: null,
+      },
       include: {
         user: true,
-        likes: { include: { user: true, tweet: true } },
+        likes: { include: { user: true } },
         replies: {
           include: {
             user: true,
             likes: { include: { user: true } },
-            replies: true,
+            replies: {
+              include: {
+                user: true,
+                likes: { include: { user: true } },
+                replies: true,
+              },
+            },
           },
         },
       },
