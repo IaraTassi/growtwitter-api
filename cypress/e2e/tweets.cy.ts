@@ -5,7 +5,7 @@ import {
   criarReply,
   buscarPorIdTweet,
   buscarFeedUsuario,
-  buscarRepliesPaginadas,
+  buscarReplies,
   criarUsuario,
   login,
 } from "../support/api";
@@ -127,11 +127,30 @@ describe("Tweets - E2E", () => {
   });
 
   describe("POST /api/tweets/:tweetId/reply - criarReply", () => {
-    it("Cria reply com sucesso", () => {
-      criarReply(tokenDono, tweetId, tweets.validReply).then((res) => {
-        expect(res.status).to.eq(201);
-        expect(res.body.ok).to.be.true;
-        replyId = res.body.reply.id;
+    it("Cria reply com sucesso em tweet de outro usuário", () => {
+      criarTweet(tokenOutro, tweets.validTweet).then((resTweetOutro) => {
+        const tweetOutroId = resTweetOutro.body.tweet.id;
+
+        criarReply(tokenDono, tweetOutroId, tweets.validReply).then((res) => {
+          expect(res.status).to.eq(201);
+          expect(res.body.ok).to.be.true;
+          expect(res.body.reply).to.have.property("id");
+          expect(res.body.reply.parentId).to.eq(tweetOutroId);
+
+          replyId = res.body.reply.id;
+        });
+      });
+    });
+
+    describe("POST /api/tweets/:tweetId/reply - criarReply", () => {
+      it("Falha ao criar reply em tweet próprio", () => {
+        criarReply(tokenDono, tweetId, tweets.validReply).then((res) => {
+          expect(res.status).to.eq(400);
+          expect(res.body.ok).to.be.false;
+          expect(res.body.message).to.eq(
+            "Você não pode responder ao próprio tweet."
+          );
+        });
       });
     });
 
@@ -156,10 +175,13 @@ describe("Tweets - E2E", () => {
       });
     });
 
-    it("Falha ao criar reply sem token", () => {
-      criarReply("", tweetId, tweets.validReply).then((res) => {
-        expect(res.status).to.eq(401);
-        expect(res.body.ok).to.be.false;
+    describe("GET /api/tweets/:id - buscarPorId", () => {
+      it("Busca tweet sem token com sucesso (agora público)", () => {
+        buscarPorIdTweet("", tweetId).then((res) => {
+          expect(res.status).to.eq(200);
+          expect(res.body.ok).to.be.true;
+          expect(res.body.tweet).to.have.property("id", tweetId);
+        });
       });
     });
   });
@@ -187,10 +209,11 @@ describe("Tweets - E2E", () => {
       });
     });
 
-    it("Falha ao buscar tweet sem token", () => {
+    it("Busca tweet sem token (agora público) - sucesso", () => {
       buscarPorIdTweet("", tweetId).then((res) => {
-        expect(res.status).to.eq(401);
-        expect(res.body.ok).to.be.false;
+        expect(res.status).to.eq(200);
+        expect(res.body.ok).to.be.true;
+        expect(res.body.tweet).to.have.property("id", tweetId);
       });
     });
   });
@@ -249,6 +272,55 @@ describe("Tweets - E2E", () => {
       buscarFeedUsuario("", 1, 5).then((res) => {
         expect(res.status).to.eq(401);
         expect(res.body.ok).to.be.false;
+      });
+    });
+  });
+
+  describe("GET /api/tweets/:tweetId/replies - buscarReplies", () => {
+    it("Retorna todas as replies de um tweet com sucesso", () => {
+      buscarReplies(tokenDono, tweetId).then((res) => {
+        expect(res.status).to.eq(200);
+        expect(res.body.ok).to.be.true;
+        expect(res.body.replies).to.be.an("array");
+        expect(res.body.replies.some((r: any) => r.parentId === tweetId)).to.be
+          .true;
+      });
+    });
+
+    it("Retorna array vazio se não houver replies", () => {
+      criarTweet(tokenDono, { content: "Tweet sem replies para teste" }).then(
+        (resTweet) => {
+          const tweetSemRepliesId = resTweet.body.tweet.id;
+
+          buscarReplies("", tweetSemRepliesId).then((res) => {
+            expect(res.status).to.eq(200);
+            expect(res.body.ok).to.be.true;
+            expect(res.body.replies).to.be.an("array");
+            expect(res.body.replies.length).to.eq(0);
+          });
+        }
+      );
+    });
+
+    it("Falha ao buscar replies com ID inválido", () => {
+      buscarReplies(tokenDono, INVALID_ID).then((res) => {
+        expect(res.status).to.eq(400);
+        expect(res.body.ok).to.be.false;
+      });
+    });
+
+    it("Falha ao buscar replies de tweet inexistente", () => {
+      buscarReplies(tokenDono, NON_EXISTENT_ID).then((res) => {
+        expect(res.status).to.eq(404);
+        expect(res.body.ok).to.be.false;
+      });
+    });
+
+    it("Busca replies sem token com sucesso (agora público)", () => {
+      buscarReplies("", tweetId).then((res) => {
+        expect(res.status).to.eq(200);
+        expect(res.body.ok).to.be.true;
+        expect(res.body.replies).to.be.an("array");
       });
     });
   });

@@ -100,7 +100,7 @@ export const buscarFeedUsuario = (token: string, page = 1, limit = 10) =>
     failOnStatusCode: false,
   });
 
-export const buscarRepliesPaginadas = (
+export const buscarReplies = (
   token: string,
   tweetId: string,
   page = 1,
