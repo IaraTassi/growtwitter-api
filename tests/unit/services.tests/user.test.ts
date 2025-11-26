@@ -39,7 +39,7 @@ describe("UserService - Testes Unitários", () => {
     jest.clearAllMocks();
   });
 
-  describe("UserService - criarUsuario", () => {
+  describe("UserService - criarUsuario / registrar", () => {
     it("deve criar usuário com sucesso", async () => {
       mockRepository.buscarPorIdentificador.mockResolvedValue(null);
       mockRepository.criarUsuario.mockResolvedValue({
@@ -110,27 +110,6 @@ describe("UserService - Testes Unitários", () => {
         statusCode: 400,
       });
     });
-  });
-
-  describe("UserService - registrar", () => {
-    it("deve registrar usuário com sucesso", async () => {
-      (bcrypt.hash as jest.Mock).mockResolvedValue("hashed_password");
-      mockRepository.buscarPorIdentificador.mockResolvedValue(null);
-      mockRepository.criarUsuario.mockResolvedValue({
-        id: "1",
-        ...validDto,
-        password: "hashed_password",
-      } as any);
-
-      const result = await service.registrar(validDto);
-
-      expect(result).toHaveProperty("id", "1");
-      expect(mockRepository.criarUsuario).toHaveBeenCalledWith({
-        ...validDto,
-        password: "hashed_password",
-      });
-      expect(bcrypt.hash).toHaveBeenCalledWith(validDto.password, 8);
-    });
 
     it("deve lançar erro se senha não for informada", async () => {
       await expect(
@@ -138,30 +117,6 @@ describe("UserService - Testes Unitários", () => {
       ).rejects.toMatchObject({
         message: "A senha é obrigatória.",
         statusCode: 400,
-      });
-    });
-
-    it("deve lançar erro se nome de usuário já estiver em uso", async () => {
-      (bcrypt.hash as jest.Mock).mockResolvedValue("hashed_password");
-      mockRepository.buscarPorIdentificador
-        .mockResolvedValueOnce({ id: "1" } as any)
-        .mockResolvedValueOnce(null);
-
-      await expect(service.registrar(validDto)).rejects.toMatchObject({
-        message: "O nome de usuário já está em uso.",
-        statusCode: 409,
-      });
-    });
-
-    it("deve lançar erro se email já estiver em uso", async () => {
-      (bcrypt.hash as jest.Mock).mockResolvedValue("hashed_password");
-      mockRepository.buscarPorIdentificador
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({ id: "1" } as any);
-
-      await expect(service.registrar(validDto)).rejects.toMatchObject({
-        message: "O email já está em uso.",
-        statusCode: 409,
       });
     });
 
@@ -204,6 +159,31 @@ describe("UserService - Testes Unitários", () => {
       expect(result).toHaveProperty("id", "1");
       expect(mockRepository.criarUsuario).toHaveBeenCalled();
       expect(bcrypt.hash).toHaveBeenCalledWith(dtoSemImagem.password, 8);
+    });
+
+    it("deve lançar erro se imageUrl for inválida", async () => {
+      const dtoInvalido = { ...validDto, imageUrl: "htp:/invalido" };
+      (bcrypt.hash as jest.Mock).mockResolvedValue("hashed_password");
+      mockRepository.buscarPorIdentificador.mockResolvedValue(null);
+
+      await expect(service.registrar(dtoInvalido)).rejects.toMatchObject({
+        message: "A URL da imagem é inválida.",
+        statusCode: 400,
+      });
+    });
+
+    it("não deve expor a senha no usuário retornado", async () => {
+      (bcrypt.hash as jest.Mock).mockResolvedValue("hashed_password");
+      mockRepository.buscarPorIdentificador.mockResolvedValue(null);
+      mockRepository.criarUsuario.mockResolvedValue({
+        id: "1",
+        ...validDto,
+        password: "hashed_password",
+      } as any);
+
+      const result = await service.registrar(validDto);
+
+      expect(result).not.toHaveProperty("password");
     });
   });
 
@@ -306,6 +286,19 @@ describe("UserService - Testes Unitários", () => {
         message: "JWT_SECRET não configurado no ambiente.",
         statusCode: 500,
       });
+    });
+
+    it("não deve expor a senha do usuário mesmo que exista no repositório", async () => {
+      const fakeUser = { ...validDto, id: "1", password: "hashed" } as any;
+      mockRepository.buscarPorIdentificador.mockResolvedValue(fakeUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (jwt.sign as jest.Mock).mockReturnValue("fake_token");
+
+      process.env.JWT_SECRET = "secret";
+
+      const result = await service.login(loginDto);
+
+      expect(result.user).not.toHaveProperty("password");
     });
   });
 
