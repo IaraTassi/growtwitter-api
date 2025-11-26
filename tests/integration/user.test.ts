@@ -30,13 +30,14 @@ describe("UserController - Testes de Integração", () => {
     };
   });
 
-  describe("POST /api/users - criarUsuario", () => {
-    it("deve criar um usuário com sucesso", async () => {
+  describe("POST /api/users - criarUsuario / registrar", () => {
+    it("deve criar/registrar usuário com sucesso", async () => {
       const res = await request(app).post(baseUrl).send(validUser);
 
       expect(res.status).toBe(201);
       expect(res.body.ok).toBe(true);
       expect(res.body.user).toHaveProperty("id");
+      expect(res.body.user).not.toHaveProperty("password");
 
       userId = res.body.user.id;
     });
@@ -160,6 +161,58 @@ describe("UserController - Testes de Integração", () => {
       expect(res.status).toBe(400);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe("A URL da imagem é inválida.");
+    });
+
+    it("deve falhar se email ou username já estiver em uso", async () => {
+      await request(app).post(baseUrl).send(validUser);
+
+      const duplicateEmail = {
+        ...validUser,
+        userName: `user_${Date.now()}`,
+      };
+      let res = await request(app).post(baseUrl).send(duplicateEmail);
+      expect(res.status).toBe(409);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe("O email já está em uso.");
+
+      const duplicateUserName = {
+        ...validUser,
+        email: `other_${Date.now()}@test.com`,
+      };
+      res = await request(app).post(baseUrl).send(duplicateUserName);
+      expect(res.status).toBe(409);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe("O nome de usuário já está em uso.");
+    });
+
+    it("não deve expor a senha no registro", async () => {
+      const res = await request(app).post(baseUrl).send(validUser);
+
+      expect(res.status).toBe(201);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.user).not.toHaveProperty("password");
+    });
+
+    it("deve falhar se email ou username já estiver em uso", async () => {
+      await request(app).post(baseUrl).send(validUser);
+
+      const duplicateEmail = {
+        ...validUser,
+        userName: `user_${Date.now()}`,
+      };
+      let res = await request(app).post(baseUrl).send(duplicateEmail);
+      expect(res.status).toBe(409);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe("O email já está em uso.");
+
+      const duplicateUserName = {
+        ...validUser,
+        email: `other_${Date.now()}@test.com`,
+      };
+      res = await request(app).post(baseUrl).send(duplicateUserName);
+      expect(res.status).toBe(409);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe("O nome de usuário já está em uso.");
     });
   });
 
@@ -309,6 +362,17 @@ describe("UserController - Testes de Integração", () => {
       expect(res.status).toBe(400);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe("O campo 'identifier' é obrigatório.");
+    });
+
+    it("não deve expor a senha no corpo da resposta", async () => {
+      const res = await request(app).post(`${baseUrl}/login`).send({
+        identifier: validUser.email,
+        password: validUser.password,
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.user).not.toHaveProperty("password");
     });
   });
 
