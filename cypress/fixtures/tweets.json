@@ -1,0 +1,9 @@
+{
+  "validTweet": { "content": "Meu primeiro tweet!" },
+  "emptyTweet": { "content": " " },
+  "invalidTweet": { "content": " " },
+
+  "validReply": { "content": "Minha primeira reply!" },
+  "emptyReply": { "content": " " },
+  "invalidReply": { "content": " " }
+}

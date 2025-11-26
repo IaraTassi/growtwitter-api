@@ -1,0 +1,30 @@
+{
+  "validUser1": {
+    "name": "Usuário Teste",
+    "userName": "user_test",
+    "email": "user_test@test.com",
+    "password": "senha123",
+    "imageUrl": "https://placekitten.com/200/200"
+  },
+  "validUser2": {
+    "name": "Usuário Teste2",
+    "userName": "user_test2",
+    "email": "user_test2@test.com",
+    "password": "senha123",
+    "imageUrl": "https://placekitten.com/200/201"
+  },
+  "invalidUser": {
+    "name": "",
+    "userName": "",
+    "email": "invalido",
+    "password": "",
+    "imageUrl": "url_invalida"
+  },
+  "invalidUserEmailDuplicado": {
+    "name": "Usuário Email Duplicado",
+    "userName": "user_test_2",
+    "email": "user_test@test.com",
+    "password": "senha123",
+    "imageUrl": "https://placekitten.com/200/201"
+  }
+}

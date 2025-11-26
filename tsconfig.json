@@ -1,15 +1,14 @@
 {
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
-    // File Layout
-    "rootDir": "./src",
+    // File Layout,
     "outDir": "./dist",
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
     "target": "es2024",
-    // "types": [],
+    "types": ["node", "jest"],
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
@@ -39,8 +38,9 @@
     "isolatedModules": true,
     // "noUncheckedSideEffectImports": true,
     // "moduleDetection": "force",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["src", "src/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "cypress/**/*.ts"],
+  "exclude": ["node_modules", "dist", "cypress"]
 }
