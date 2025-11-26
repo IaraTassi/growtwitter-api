@@ -70,4 +70,20 @@ export class TweetController {
       next(error);
     }
   }
+
+  async buscarReplies(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { tweetId } = req.params;
+
+      const replies = await tweetService.buscarReplies(tweetId);
+
+      return res.status(200).json({
+        ok: true,
+        message: "Replies encontradas com sucesso.",
+        replies,
+      });
+    } catch (error: any) {
+      next(error);
+    }
+  }
 }

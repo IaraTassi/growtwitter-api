@@ -80,4 +80,24 @@ export class TweetRepository {
 
     return tweets.map((t) => mapTweet(t));
   }
+
+  async buscarReplies(tweetId: string): Promise<Tweet[]> {
+    const replies = await prisma.tweet.findMany({
+      where: { parentId: tweetId },
+      include: {
+        user: true,
+        likes: { include: { user: true } },
+        replies: {
+          include: {
+            user: true,
+            likes: { include: { user: true } },
+            replies: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return replies.map((t) => mapTweet(t));
+  }
 }
