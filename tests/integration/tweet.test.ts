@@ -146,9 +146,7 @@ describe("TweetController - Testes de Integração Avançados", () => {
 
   describe("GET /api/tweets/:id - buscarPorId", () => {
     it("deve retornar um tweet com sucesso", async () => {
-      const res = await request(app)
-        .get(`${baseUrl}/${tweetId}`)
-        .set("Authorization", `Bearer ${token}`);
+      const res = await request(app).get(`${baseUrl}/${tweetId}`);
 
       expect(res.status).toBe(200);
       expect(res.body.ok).toBe(true);
@@ -157,9 +155,7 @@ describe("TweetController - Testes de Integração Avançados", () => {
     });
 
     it("deve falhar ao buscar tweet com id inválido", async () => {
-      const res = await request(app)
-        .get(`${baseUrl}/invalid-uuid`)
-        .set("Authorization", `Bearer ${token}`);
+      const res = await request(app).get(`${baseUrl}/invalid-uuid`);
 
       expect(res.status).toBe(400);
       expect(res.body.ok).toBe(false);
@@ -171,36 +167,36 @@ describe("TweetController - Testes de Integração Avançados", () => {
     it("deve falhar ao buscar tweet inexistente", async () => {
       const fakeId = "00000000-0000-0000-0000-000000000000";
 
-      const res = await request(app)
-        .get(`${baseUrl}/${fakeId}`)
-        .set("Authorization", `Bearer ${token}`);
+      const res = await request(app).get(`${baseUrl}/${fakeId}`);
 
       expect(res.status).toBe(404);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe("Tweet não encontrado.");
     });
 
-    it("deve falhar ao buscar tweet sem token", async () => {
+    it("deve buscar tweet sem token", async () => {
       const res = await request(app).get(`${baseUrl}/${tweetId}`);
 
-      expect(res.status).toBe(401);
-      expect(res.body.ok).toBe(false);
-      expect(res.body.message).toBe(
-        "Token de autenticação não fornecido ou inválido."
-      );
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.message).toBe("Tweet buscado com sucesso.");
     });
   });
 
   describe("POST /api/tweets/:parentId/reply - criarReply", () => {
     it("deve criar uma reply com sucesso", async () => {
+      const tweetDoOutro = await prisma.tweet.create({
+        data: { content: "Tweet do outro usuário", userId: otherId },
+      });
+
       const res = await request(app)
-        .post(`${baseUrl}/${tweetId}/reply`)
+        .post(`${baseUrl}/${tweetDoOutro.id}/reply`)
         .set("Authorization", `Bearer ${token}`)
         .send({ content: "Minha resposta ao tweet!" });
 
       expect(res.status).toBe(201);
       expect(res.body.ok).toBe(true);
-      expect(res.body.reply.parentId).toBe(tweetId);
+      expect(res.body.reply.parentId).toBe(tweetDoOutro.id);
       expect(res.body.message).toBe("Resposta criada com sucesso.");
     });
 
@@ -329,6 +325,62 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.status).toBe(401);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe("Token inválido ou expirado.");
+    });
+  });
+
+  describe("GET /api/tweets/:tweetId/replies - buscarReplies", () => {
+    it("deve retornar todas as replies de um tweet com sucesso", async () => {
+      const res = await request(app).get(`${baseUrl}/${tweetId}/replies`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(Array.isArray(res.body.replies)).toBe(true);
+
+      expect(res.body.replies.some((r: any) => r.parentId === tweetId)).toBe(
+        true
+      );
+      const nestedReply = res.body.replies.some(
+        (r: any) => r.replies?.length > 0
+      );
+      expect(nestedReply).toBe(true);
+
+      expect(res.body.message).toBe("Replies encontradas com sucesso.");
+    });
+
+    it("deve retornar array vazio se o tweet não tiver replies", async () => {
+      const tweetSemReplies = await prisma.tweet.create({
+        data: { content: "Tweet sem replies", userId },
+      });
+
+      const res = await request(app).get(
+        `${baseUrl}/${tweetSemReplies.id}/replies`
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(Array.isArray(res.body.replies)).toBe(true);
+      expect(res.body.replies.length).toBe(0);
+      expect(res.body.message).toBe("Replies encontradas com sucesso.");
+    });
+
+    it("deve falhar ao buscar replies com tweetId inválido", async () => {
+      const res = await request(app).get(`${baseUrl}/invalid-uuid/replies`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe(
+        'O parâmetro "tweetId" é inválido ou ausente. Deve ser um UUID válido.'
+      );
+    });
+
+    it("deve falhar ao buscar replies de tweet inexistente", async () => {
+      const fakeId = "00000000-0000-0000-0000-000000000000";
+
+      const res = await request(app).get(`${baseUrl}/${fakeId}/replies`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe("Tweet não encontrado.");
     });
   });
 });

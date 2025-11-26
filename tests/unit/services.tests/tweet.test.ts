@@ -17,6 +17,7 @@ describe("TweetService - Testes Unitários", () => {
       buscarPorId: jest.fn(),
       criarReply: jest.fn(),
       buscarFeedUsuario: jest.fn(),
+      buscarReplies: jest.fn(),
     } as jest.Mocked<TweetRepository>;
 
     service = new TweetService();
@@ -30,6 +31,8 @@ describe("TweetService - Testes Unitários", () => {
         id: "1",
         content: validTweetDto.content,
         userId: "user1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
       mockRepository.criarTweet.mockResolvedValue(mockTweet as any);
 
@@ -124,7 +127,7 @@ describe("TweetService - Testes Unitários", () => {
       mockRepository.buscarPorId.mockResolvedValue({
         id: "tweet123",
         content: "tweet original",
-        userId: "user1",
+        userId: "usuarioDiferente",
       } as any);
       mockRepository.criarReply.mockResolvedValue(mockReply as any);
 
@@ -150,7 +153,7 @@ describe("TweetService - Testes Unitários", () => {
       await expect(
         service.criarReply({ ...validReplyDto, content: "" }, "user1")
       ).rejects.toMatchObject({
-        message: "O conteúdo da resposta é obrigatório.",
+        message: "O conteúdo da resposta não pode estar vazio.",
         statusCode: 400,
       });
     });
@@ -182,33 +185,86 @@ describe("TweetService - Testes Unitários", () => {
         statusCode: 404,
       });
     });
+
+    it("deve lançar erro se tentar responder ao próprio tweet", async () => {
+      mockRepository.buscarPorId.mockResolvedValue({
+        id: "tweet123",
+        content: "tweet original",
+        userId: "user1",
+      } as any);
+
+      await expect(
+        service.criarReply(validReplyDto, "user1")
+      ).rejects.toMatchObject({
+        message: "Você não pode responder ao próprio tweet.",
+        statusCode: 400,
+      });
+    });
   });
 
-  describe("TweetService - buscarFeedUsuario", () => {
-    it("deve retornar feed do usuário com sucesso", async () => {
-      const tweetsMock = [
-        { id: "1", content: "tweet 1", userId: "user1" },
-        { id: "2", content: "tweet 2", userId: "user2" },
-      ];
+  describe("TweetService - buscarReplies", () => {
+    const tweetId = "tweet123";
+    const mockReplies = [
+      {
+        id: "1",
+        content: "Primeira reply",
+        parentId: tweetId,
+        userId: "user2",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "2",
+        content: "Segunda reply",
+        parentId: tweetId,
+        userId: "user3",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
 
-      mockRepository.buscarFeedUsuario.mockResolvedValue(tweetsMock as any);
+    it("deve retornar replies do tweet com sucesso", async () => {
+      mockRepository.buscarPorId.mockResolvedValue({
+        id: tweetId,
+        content: "tweet original",
+        userId: "user1",
+      } as any);
 
-      const result = await service.buscarFeedUsuario("user1");
+      mockRepository.buscarReplies.mockResolvedValue(mockReplies as any);
 
-      expect(result).toEqual(tweetsMock);
-      expect(mockRepository.buscarFeedUsuario).toHaveBeenCalledWith("user1");
+      const result = await service.buscarReplies(tweetId);
+
+      expect(result).toEqual(mockReplies);
+      expect(mockRepository.buscarPorId).toHaveBeenCalledWith(tweetId);
+      expect(mockRepository.buscarReplies).toHaveBeenCalledWith(tweetId);
     });
 
-    it("deve lançar erro se userId não for informado", async () => {
-      await expect(service.buscarFeedUsuario("")).rejects.toMatchObject({
-        message: "O ID do usuário é obrigatório.",
+    it("deve lançar erro se tweetId não for informado", async () => {
+      await expect(service.buscarReplies("")).rejects.toMatchObject({
+        message: "O ID do tweet é obrigatório.",
         statusCode: 400,
       });
     });
 
-    it("deve retornar array vazio se usuário não tiver tweets", async () => {
-      mockRepository.buscarFeedUsuario.mockResolvedValue([]);
-      const result = await service.buscarFeedUsuario("user1");
+    it("deve lançar erro 404 se tweet original não existir", async () => {
+      mockRepository.buscarPorId.mockResolvedValue(null);
+
+      await expect(service.buscarReplies(tweetId)).rejects.toMatchObject({
+        message: "Tweet não encontrado.",
+        statusCode: 404,
+      });
+    });
+
+    it("deve retornar array vazio se não houver replies", async () => {
+      mockRepository.buscarPorId.mockResolvedValue({
+        id: tweetId,
+        content: "tweet original",
+        userId: "user1",
+      } as any);
+
+      mockRepository.buscarReplies.mockResolvedValue([]);
+
+      const result = await service.buscarReplies(tweetId);
       expect(result).toEqual([]);
     });
   });

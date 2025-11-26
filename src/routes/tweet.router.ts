@@ -14,6 +14,7 @@ import { validateUUIDParams } from "../middlewares/validate.UUID.middleware";
  * POST   /                       → criarTweet()
  * GET    /:id                    → buscarPorId()
  * POST   /:parentId/reply        → criarReply()
+ * GET    /:tweetId/replies       → criarReply()
  */
 
 const tweetRoutes = Router();
@@ -35,8 +36,12 @@ tweetRoutes.post(
   (req, res, next) => tweetController.criarReply(req, res, next)
 );
 
-tweetRoutes.get("/:id", validateUUIDParams, authMiddleware, (req, res, next) =>
+tweetRoutes.get("/:id", validateUUIDParams, (req, res, next) =>
   tweetController.buscarPorId(req, res, next)
+);
+
+tweetRoutes.get("/:tweetId/replies", validateUUIDParams, (req, res, next) =>
+  tweetController.buscarReplies(req, res, next)
 );
 
 export default tweetRoutes;
