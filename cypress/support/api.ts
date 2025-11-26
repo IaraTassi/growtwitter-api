@@ -58,6 +58,14 @@ export const removerUsuario = (token: string, userId: string) => {
   });
 };
 
+export const alternarLike = (token: string, tweetId: string) =>
+  cy.request({
+    method: "PATCH",
+    url: `${baseLikeUrl}/${tweetId}`,
+    headers: { Authorization: `Bearer ${token}` },
+    failOnStatusCode: false,
+  });
+
 export const criarTweet = (token: string, tweet: any) =>
   cy.request({
     method: "POST",

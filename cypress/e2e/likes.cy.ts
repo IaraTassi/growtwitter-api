@@ -7,6 +7,7 @@ import {
   adicionarLike,
   buscarLike,
   removerLike,
+  alternarLike,
 } from "../support/api";
 
 describe("Likes - E2E", () => {
@@ -220,6 +221,74 @@ describe("Likes - E2E", () => {
           expect(res.body.ok).to.be.false;
           expect(res.body.message).to.eq("Like não encontrado.");
         });
+      });
+    });
+  });
+
+  describe("PATCH /api/likes/:tweetId - alternarLike", () => {
+    it("Alterna like: adiciona se não existir", () => {
+      alternarLike(tokenOutro, tweetId).then((res) => {
+        expect(res.status).to.eq(200);
+        expect(res.body.ok).to.be.true;
+        expect(res.body.message).to.eq("Like adicionado com sucesso.");
+        expect(res.body.like).to.have.property("tweetId", tweetId);
+        expect(res.body.like).to.have.property("userId", userIdOutro);
+      });
+    });
+
+    it("Alterna like: remove se já existir", () => {
+      adicionarLike(tokenOutro, tweetId).then(() => {
+        alternarLike(tokenOutro, tweetId).then((res) => {
+          expect(res.status).to.eq(200);
+          expect(res.body.ok).to.be.true;
+          expect(res.body.message).to.eq("Like removido com sucesso.");
+          expect(res.body.like).to.be.null;
+        });
+      });
+    });
+
+    it("Falha ao alternar like sem token", () => {
+      alternarLike("", tweetId).then((res) => {
+        expect(res.status).to.eq(401);
+        expect(res.body.ok).to.be.false;
+        expect(res.body.message).to.eq(
+          "Token de autenticação não fornecido ou inválido."
+        );
+      });
+    });
+
+    it("Falha com token malformado", () => {
+      alternarLike("malformed.token.value", tweetId).then((res) => {
+        expect(res.status).to.eq(401);
+        expect(res.body.ok).to.be.false;
+      });
+    });
+
+    it("Falha ao alternar like com ID inválido", () => {
+      alternarLike(tokenOutro, INVALID_ID).then((res) => {
+        expect(res.status).to.eq(400);
+        expect(res.body.ok).to.be.false;
+        expect(res.body.message).to.eq(
+          'O parâmetro "tweetId" é inválido ou ausente. Deve ser um UUID válido.'
+        );
+      });
+    });
+
+    it("Falha ao alternar like de tweet inexistente", () => {
+      alternarLike(tokenOutro, NON_EXISTENT_ID).then((res) => {
+        expect(res.status).to.eq(404);
+        expect(res.body.ok).to.be.false;
+        expect(res.body.message).to.eq("Tweet não encontrado.");
+      });
+    });
+
+    it("Falha ao alternar like no próprio tweet", () => {
+      alternarLike(tokenDono, tweetId).then((res) => {
+        expect(res.status).to.eq(409);
+        expect(res.body.ok).to.be.false;
+        expect(res.body.message).to.eq(
+          "Usuário não pode curtir o próprio tweet."
+        );
       });
     });
   });
