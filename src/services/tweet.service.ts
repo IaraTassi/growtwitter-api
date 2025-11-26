@@ -62,13 +62,13 @@ export class TweetService {
   async criarReply(dto: CreateTweetDto, userId: string): Promise<Tweet> {
     this.validarCampo(userId, "O ID do usuário é obrigatório.");
     this.validarCampo(dto.parentId, "O ID do tweet original é obrigatório.");
-
-    if (dto.content === undefined || dto.content === "") {
-      throw new AppError("O conteúdo da resposta é obrigatório.", 400);
-    }
     this.validarConteudo(dto.content, "resposta");
 
-    await this.buscarPorId(dto.parentId as string);
+    const tweetOriginal = await this.buscarPorId(dto.parentId as string);
+
+    if (tweetOriginal.userId === userId) {
+      throw new AppError("Você não pode responder ao próprio tweet.", 400);
+    }
 
     return this.tweetRepository.criarReply(dto, userId);
   }
@@ -78,5 +78,13 @@ export class TweetService {
 
     const tweets = await this.tweetRepository.buscarFeedUsuario(userId);
     return tweets ?? [];
+  }
+
+  async buscarReplies(tweetId: string): Promise<Tweet[]> {
+    this.validarCampo(tweetId, "O ID do tweet é obrigatório.");
+
+    await this.buscarPorId(tweetId);
+
+    return this.tweetRepository.buscarReplies(tweetId);
   }
 }
