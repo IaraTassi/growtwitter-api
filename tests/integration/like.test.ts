@@ -251,4 +251,70 @@ describe("LikeController - Testes de Integração", () => {
       expect(res.body.message).toBe("Usuário não encontrado no token.");
     });
   });
+
+  describe("PATCH /api/likes/:tweetId - alternarLike", () => {
+    it("deve adicionar like quando ainda não existir", async () => {
+      const res = await request(app)
+        .patch(`${baseUrl}/${idTweet}`)
+        .set("Authorization", `Bearer ${tokenUsuarioOutro}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.message).toBe("Like adicionado com sucesso.");
+      expect(res.body.like).toHaveProperty("userId", idUsuarioOutro);
+      expect(res.body.like).toHaveProperty("tweetId", idTweet);
+    });
+
+    it("deve remover like quando já existir", async () => {
+      await prisma.like.create({
+        data: { userId: idUsuarioOutro, tweetId: idTweet },
+      });
+
+      const res = await request(app)
+        .patch(`${baseUrl}/${idTweet}`)
+        .set("Authorization", `Bearer ${tokenUsuarioOutro}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.message).toBe("Like removido com sucesso.");
+      expect(res.body.like).toBeNull();
+
+      const likeAposRemocao = await prisma.like.findFirst({
+        where: { userId: idUsuarioOutro, tweetId: idTweet },
+      });
+      expect(likeAposRemocao).toBeNull();
+    });
+
+    it("não deve permitir curtir o próprio tweet", async () => {
+      const res = await request(app)
+        .patch(`${baseUrl}/${idTweet}`)
+        .set("Authorization", `Bearer ${tokenUsuarioDono}`);
+
+      expect(res.status).toBe(409);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe("Usuário não pode curtir o próprio tweet.");
+    });
+
+    it("deve falhar quando tweetId for inválido", async () => {
+      const res = await request(app)
+        .patch(`${baseUrl}/id-invalido`)
+        .set("Authorization", `Bearer ${tokenUsuarioOutro}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe(
+        'O parâmetro "tweetId" é inválido ou ausente. Deve ser um UUID válido.'
+      );
+    });
+
+    it("deve falhar quando usuário não estiver autenticado", async () => {
+      const res = await request(app).patch(`${baseUrl}/${idTweet}`);
+
+      expect(res.status).toBe(401);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe(
+        "Token de autenticação não fornecido ou inválido."
+      );
+    });
+  });
 });
