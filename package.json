@@ -7,6 +7,7 @@
     "dev": "cross-env NODE_ENV=development ts-node-dev --respawn src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "start:prod": "dotenv -e .env.prod -- node dist/server.js",
     "migrate:dev": "dotenv -e .env.dev -- npx prisma migrate dev",
     "db:push:dev": "dotenv -e .env.dev -- npx prisma db push",
     "migrate:test": "dotenv -e .env.test -- npx prisma migrate deploy",
