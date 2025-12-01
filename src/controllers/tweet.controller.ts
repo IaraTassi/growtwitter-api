@@ -75,12 +75,23 @@ export class TweetController {
     try {
       const { tweetId } = req.params;
 
-      const replies = await tweetService.buscarReplies(tweetId);
+      let skip = parseInt(String(req.query.skip)) || 0;
+      let take = parseInt(String(req.query.take)) || 5;
+
+      if (skip < 0) skip = 0;
+      if (take <= 0 || take > 50) take = 5;
+
+      const { replies, totalCount } = await tweetService.buscarReplies(
+        tweetId,
+        skip,
+        take
+      );
 
       return res.status(200).json({
         ok: true,
         message: "Replies encontradas com sucesso.",
         replies,
+        totalCount,
       });
     } catch (error: any) {
       next(error);

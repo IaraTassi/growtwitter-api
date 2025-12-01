@@ -23,10 +23,9 @@ export function mapTweet(tweet: TweetComRelacoes, depth = 0): Tweet {
     updatedAt: tweet.updatedAt,
 
     user: tweet.user ? mapUser(tweet.user, true) : undefined,
-
-    likes: tweet.likes?.map((l) => mapLike(l, true)),
+    likes: tweet.likes?.map((l) => mapLike(l, true)) ?? [],
 
     replies:
-      depth < 2 ? tweet.replies?.map((r) => mapTweet(r, depth + 1)) : undefined,
+      depth < 3 ? tweet.replies?.map((r) => mapTweet(r, depth + 1)) ?? [] : [],
   };
 }
