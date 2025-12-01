@@ -83,4 +83,25 @@ export class LikeService {
 
     await this.likeRepository.removerLike(tweetId, userId);
   }
+
+  async alternarLike(tweetId: string, userId: string): Promise<Like | null> {
+    this.validarCampo(userId, "O ID do usuário é obrigatório.");
+    this.validarCampo(tweetId, "O ID do tweet é obrigatório.");
+
+    await this.validarUsuarioExistente(userId);
+    const tweet = await this.validarTweetExistente(tweetId);
+
+    if (tweet.userId === userId) {
+      throw new AppError("Usuário não pode curtir o próprio tweet.", 409);
+    }
+
+    const likeExistente = await this.likeRepository.buscarLike(tweetId, userId);
+
+    if (likeExistente) {
+      await this.likeRepository.removerLike(tweetId, userId);
+      return null;
+    }
+
+    return await this.likeRepository.adicionarLike({ tweetId }, userId);
+  }
 }
