@@ -278,34 +278,42 @@ describe("Tweets - E2E", () => {
 
   describe("GET /api/tweets/:tweetId/replies - buscarReplies", () => {
     it("Retorna todas as replies de um tweet com sucesso", () => {
+      criarTweet(tokenDono, { content: "Reply 1", parentId: tweetId });
+      criarTweet(tokenDono, { content: "Reply 2", parentId: tweetId });
+
       buscarReplies(tokenDono, tweetId).then((res) => {
         expect(res.status).to.eq(200);
         expect(res.body.ok).to.be.true;
         expect(res.body.replies).to.be.an("array");
         expect(res.body.replies.some((r: any) => r.parentId === tweetId)).to.be
           .true;
+        expect(res.body.totalCount).to.be.a("number");
       });
     });
 
-    it("Retorna array vazio se não houver replies", () => {
-      criarTweet(tokenDono, { content: "Tweet sem replies para teste" }).then(
-        (resTweet) => {
-          const tweetSemRepliesId = resTweet.body.tweet.id;
+    it("Retorna array vazio e totalCount 0 se não houver replies", () => {
+      criarTweet(tokenDono, {
+        content: "Tweet sem replies para teste",
+      }).then((resTweet) => {
+        const tweetSemRepliesId = resTweet.body.tweet.id;
 
-          buscarReplies("", tweetSemRepliesId).then((res) => {
-            expect(res.status).to.eq(200);
-            expect(res.body.ok).to.be.true;
-            expect(res.body.replies).to.be.an("array");
-            expect(res.body.replies.length).to.eq(0);
-          });
-        }
-      );
+        buscarReplies("", tweetSemRepliesId).then((res) => {
+          expect(res.status).to.eq(200);
+          expect(res.body.ok).to.be.true;
+          expect(res.body.replies).to.be.an("array");
+          expect(res.body.replies.length).to.eq(0);
+          expect(res.body.totalCount).to.eq(0);
+        });
+      });
     });
 
     it("Falha ao buscar replies com ID inválido", () => {
       buscarReplies(tokenDono, INVALID_ID).then((res) => {
         expect(res.status).to.eq(400);
         expect(res.body.ok).to.be.false;
+        expect(res.body.message).to.eq(
+          'O parâmetro "tweetId" é inválido ou ausente. Deve ser um UUID válido.'
+        );
       });
     });
 
@@ -313,6 +321,7 @@ describe("Tweets - E2E", () => {
       buscarReplies(tokenDono, NON_EXISTENT_ID).then((res) => {
         expect(res.status).to.eq(404);
         expect(res.body.ok).to.be.false;
+        expect(res.body.message).to.eq("Tweet não encontrado.");
       });
     });
 
@@ -321,6 +330,24 @@ describe("Tweets - E2E", () => {
         expect(res.status).to.eq(200);
         expect(res.body.ok).to.be.true;
         expect(res.body.replies).to.be.an("array");
+        expect(res.body.totalCount).to.be.a("number");
+      });
+    });
+
+    it("Permite paginação com page e limit (equivalente a skip/take)", () => {
+      for (let i = 0; i < 5; i++) {
+        criarTweet(tokenDono, {
+          content: `Paginação ${i}`,
+          parentId: tweetId,
+        });
+      }
+
+      buscarReplies(tokenDono, tweetId, 2, 2).then((res) => {
+        expect(res.status).to.eq(200);
+        expect(res.body.ok).to.be.true;
+        expect(res.body.replies).to.be.an("array");
+        expect(res.body.replies.length).to.be.lte(2);
+        expect(res.body.totalCount).to.be.a("number");
       });
     });
   });
