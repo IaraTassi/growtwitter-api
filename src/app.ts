@@ -29,4 +29,6 @@ app.use("/api/follows", followRoutes);
 
 app.use(errorHandler);
 
+app.get("/health", (req, res) => res.sendStatus(200));
+
 export default app;
