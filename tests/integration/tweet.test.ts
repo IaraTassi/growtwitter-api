@@ -335,6 +335,10 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.status).toBe(200);
       expect(res.body.ok).toBe(true);
       expect(Array.isArray(res.body.replies)).toBe(true);
+      expect(typeof res.body.totalCount).toBe("number");
+      expect(res.body.totalCount).toBeGreaterThanOrEqual(
+        res.body.replies.length
+      );
 
       expect(res.body.replies.some((r: any) => r.parentId === tweetId)).toBe(
         true
@@ -347,7 +351,7 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.body.message).toBe("Replies encontradas com sucesso.");
     });
 
-    it("deve retornar array vazio se o tweet não tiver replies", async () => {
+    it("deve retornar array vazio e totalCount 0 se o tweet não tiver replies", async () => {
       const tweetSemReplies = await prisma.tweet.create({
         data: { content: "Tweet sem replies", userId },
       });
@@ -360,6 +364,7 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.body.ok).toBe(true);
       expect(Array.isArray(res.body.replies)).toBe(true);
       expect(res.body.replies.length).toBe(0);
+      expect(res.body.totalCount).toBe(0);
       expect(res.body.message).toBe("Replies encontradas com sucesso.");
     });
 
@@ -381,6 +386,17 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.status).toBe(404);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe("Tweet não encontrado.");
+    });
+
+    it("deve respeitar skip e take para paginação", async () => {
+      const res = await request(app).get(
+        `${baseUrl}/${tweetId}/replies?skip=1&take=1`
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.replies.length).toBeLessThanOrEqual(1);
+      expect(typeof res.body.totalCount).toBe("number");
     });
   });
 });
