@@ -223,20 +223,27 @@ describe("TweetService - Testes Unitários", () => {
       },
     ];
 
-    it("deve retornar replies do tweet com sucesso", async () => {
+    it("deve retornar replies e totalCount com sucesso", async () => {
       mockRepository.buscarPorId.mockResolvedValue({
         id: tweetId,
         content: "tweet original",
         userId: "user1",
       } as any);
 
-      mockRepository.buscarReplies.mockResolvedValue(mockReplies as any);
+      mockRepository.buscarReplies.mockResolvedValue({
+        replies: mockReplies as any,
+        totalCount: 2,
+      });
 
       const result = await service.buscarReplies(tweetId);
 
-      expect(result).toEqual(mockReplies);
+      expect(result).toEqual({
+        replies: mockReplies,
+        totalCount: 2,
+      });
+
       expect(mockRepository.buscarPorId).toHaveBeenCalledWith(tweetId);
-      expect(mockRepository.buscarReplies).toHaveBeenCalledWith(tweetId);
+      expect(mockRepository.buscarReplies).toHaveBeenCalledWith(tweetId, 0, 5);
     });
 
     it("deve lançar erro se tweetId não for informado", async () => {
@@ -255,17 +262,51 @@ describe("TweetService - Testes Unitários", () => {
       });
     });
 
-    it("deve retornar array vazio se não houver replies", async () => {
+    it("deve retornar array vazio e totalCount 0 se não houver replies", async () => {
       mockRepository.buscarPorId.mockResolvedValue({
         id: tweetId,
         content: "tweet original",
         userId: "user1",
       } as any);
 
-      mockRepository.buscarReplies.mockResolvedValue([]);
+      mockRepository.buscarReplies.mockResolvedValue({
+        replies: [],
+        totalCount: 0,
+      });
 
       const result = await service.buscarReplies(tweetId);
-      expect(result).toEqual([]);
+
+      expect(result).toEqual({
+        replies: [],
+        totalCount: 0,
+      });
+    });
+
+    it("deve respeitar skip e take se fornecidos", async () => {
+      mockRepository.buscarPorId.mockResolvedValue({
+        id: tweetId,
+        content: "tweet original",
+        userId: "user1",
+      } as any);
+
+      mockRepository.buscarReplies.mockResolvedValue({
+        replies: mockReplies as any,
+        totalCount: 10,
+      });
+
+      const skip = 2;
+      const take = 3;
+      const result = await service.buscarReplies(tweetId, skip, take);
+
+      expect(mockRepository.buscarReplies).toHaveBeenCalledWith(
+        tweetId,
+        skip,
+        take
+      );
+      expect(result).toEqual({
+        replies: mockReplies,
+        totalCount: 10,
+      });
     });
   });
 });

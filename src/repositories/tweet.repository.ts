@@ -9,12 +9,14 @@ export class TweetRepository {
       data: { content: dto.content, parentId: dto.parentId, userId },
       include: {
         user: true,
-        likes: { include: { user: true, tweet: true } },
+        likes: { include: { user: true } },
         replies: {
           include: {
             user: true,
             likes: { include: { user: true } },
-            replies: true,
+            replies: {
+              include: { user: true, likes: { include: { user: true } } },
+            },
           },
         },
       },
@@ -33,6 +35,9 @@ export class TweetRepository {
           include: {
             user: true,
             likes: { include: { user: true } },
+            replies: {
+              include: { user: true, likes: { include: { user: true } } },
+            },
           },
         },
       },
@@ -66,11 +71,7 @@ export class TweetRepository {
             user: true,
             likes: { include: { user: true } },
             replies: {
-              include: {
-                user: true,
-                likes: { include: { user: true } },
-                replies: true,
-              },
+              include: { user: true, likes: { include: { user: true } } },
             },
           },
         },
@@ -81,23 +82,29 @@ export class TweetRepository {
     return tweets.map((t) => mapTweet(t));
   }
 
-  async buscarReplies(tweetId: string): Promise<Tweet[]> {
+  async buscarReplies(
+    tweetId: string,
+    skip = 0,
+    take = 5
+  ): Promise<{ replies: Tweet[]; totalCount: number }> {
+    const totalCount = await prisma.tweet.count({
+      where: { parentId: tweetId },
+    });
+
     const replies = await prisma.tweet.findMany({
       where: { parentId: tweetId },
       include: {
         user: true,
         likes: { include: { user: true } },
         replies: {
-          include: {
-            user: true,
-            likes: { include: { user: true } },
-            replies: true,
-          },
+          include: { user: true, likes: { include: { user: true } } },
         },
       },
       orderBy: { createdAt: "asc" },
+      skip,
+      take,
     });
 
-    return replies.map((t) => mapTweet(t));
+    return { replies: replies.map(mapTweet), totalCount };
   }
 }
