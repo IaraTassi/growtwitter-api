@@ -80,11 +80,24 @@ export class TweetService {
     return tweets ?? [];
   }
 
-  async buscarReplies(tweetId: string): Promise<Tweet[]> {
+  async buscarReplies(
+    tweetId: string,
+    skip = 0,
+    take = 5
+  ): Promise<{ replies: Tweet[]; totalCount: number }> {
     this.validarCampo(tweetId, "O ID do tweet é obrigatório.");
+
+    if (isNaN(skip) || skip < 0) skip = 0;
+    if (isNaN(take) || take <= 0 || take > 50) take = 5;
 
     await this.buscarPorId(tweetId);
 
-    return this.tweetRepository.buscarReplies(tweetId);
+    const { replies, totalCount } = await this.tweetRepository.buscarReplies(
+      tweetId,
+      skip,
+      take
+    );
+
+    return { replies, totalCount };
   }
 }
