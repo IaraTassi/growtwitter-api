@@ -186,19 +186,31 @@ describe("TweetService - Testes Unitários", () => {
       });
     });
 
-    it("deve lançar erro se tentar responder ao próprio tweet", async () => {
+    it("deve permitir que o usuário responda ao próprio tweet", async () => {
+      const mockReply = {
+        id: "3",
+        content: validReplyDto.content,
+        parentId: "tweet123",
+        userId: "user1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
       mockRepository.buscarPorId.mockResolvedValue({
         id: "tweet123",
         content: "tweet original",
         userId: "user1",
       } as any);
 
-      await expect(
-        service.criarReply(validReplyDto, "user1")
-      ).rejects.toMatchObject({
-        message: "Você não pode responder ao próprio tweet.",
-        statusCode: 400,
-      });
+      mockRepository.criarReply.mockResolvedValue(mockReply as any);
+
+      const result = await service.criarReply(validReplyDto, "user1");
+
+      expect(result).toEqual(mockReply);
+      expect(mockRepository.criarReply).toHaveBeenCalledWith(
+        validReplyDto,
+        "user1"
+      );
     });
   });
 

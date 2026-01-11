@@ -64,11 +64,7 @@ export class TweetService {
     this.validarCampo(dto.parentId, "O ID do tweet original é obrigatório.");
     this.validarConteudo(dto.content, "resposta");
 
-    const tweetOriginal = await this.buscarPorId(dto.parentId as string);
-
-    if (tweetOriginal.userId === userId) {
-      throw new AppError("Você não pode responder ao próprio tweet.", 400);
-    }
+    await this.buscarPorId(dto.parentId as string);
 
     return this.tweetRepository.criarReply(dto, userId);
   }

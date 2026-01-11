@@ -142,15 +142,13 @@ describe("Tweets - E2E", () => {
       });
     });
 
-    describe("POST /api/tweets/:tweetId/reply - criarReply", () => {
-      it("Falha ao criar reply em tweet próprio", () => {
-        criarReply(tokenDono, tweetId, tweets.validReply).then((res) => {
-          expect(res.status).to.eq(400);
-          expect(res.body.ok).to.be.false;
-          expect(res.body.message).to.eq(
-            "Você não pode responder ao próprio tweet."
-          );
-        });
+    it("Cria reply com sucesso em tweet próprio", () => {
+      criarReply(tokenDono, tweetId, tweets.validReply).then((res) => {
+        expect(res.status).to.eq(201);
+        expect(res.body.ok).to.be.true;
+        expect(res.body.reply.parentId).to.eq(tweetId);
+        expect(res.body.reply.userId).to.eq(userIdDono);
+        expect(res.body.message).to.eq("Resposta criada com sucesso.");
       });
     });
 

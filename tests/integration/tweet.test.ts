@@ -247,6 +247,23 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe("O conteúdo da resposta é obrigatório.");
     });
+
+    it("deve permitir que o usuário responda ao próprio tweet", async () => {
+      const tweetDoUsuario = await prisma.tweet.create({
+        data: { content: "Meu próprio tweet", userId },
+      });
+
+      const res = await request(app)
+        .post(`${baseUrl}/${tweetDoUsuario.id}/reply`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ content: "Minha resposta ao meu próprio tweet!" });
+
+      expect(res.status).toBe(201);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.reply.parentId).toBe(tweetDoUsuario.id);
+      expect(res.body.reply.userId).toBe(userId);
+      expect(res.body.message).toBe("Resposta criada com sucesso.");
+    });
   });
 
   describe("GET /api/tweets/feed - buscarFeedUsuario", () => {
