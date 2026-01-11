@@ -46,10 +46,6 @@ export class LikeService {
     await this.validarUsuarioExistente(userId);
     const tweet = await this.validarTweetExistente(dto.tweetId);
 
-    if (tweet.userId === userId) {
-      throw new AppError("Usuário não pode curtir o próprio tweet.", 409);
-    }
-
     const likeExistente = await this.likeRepository.buscarLike(
       dto.tweetId,
       userId
@@ -90,10 +86,6 @@ export class LikeService {
 
     await this.validarUsuarioExistente(userId);
     const tweet = await this.validarTweetExistente(tweetId);
-
-    if (tweet.userId === userId) {
-      throw new AppError("Usuário não pode curtir o próprio tweet.", 409);
-    }
 
     const likeExistente = await this.likeRepository.buscarLike(tweetId, userId);
 

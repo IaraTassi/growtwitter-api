@@ -91,13 +91,11 @@ describe("Likes - E2E", () => {
       });
     });
 
-    it("Falha ao curtir próprio tweet", () => {
+    it("Adiciona like ao curtir próprio tweet", () => {
       adicionarLike(tokenDono, tweetId).then((res) => {
-        expect(res.status).to.eq(409);
-        expect(res.body.ok).to.be.false;
-        expect(res.body.message).to.eq(
-          "Usuário não pode curtir o próprio tweet."
-        );
+        expect(res.status).to.eq(201);
+        expect(res.body.ok).to.be.true;
+        expect(res.body.message).to.eq("Like adicionado com sucesso.");
       });
     });
 
@@ -282,13 +280,11 @@ describe("Likes - E2E", () => {
       });
     });
 
-    it("Falha ao alternar like no próprio tweet", () => {
+    it("Alternar like no próprio tweet com sucesso", () => {
       alternarLike(tokenDono, tweetId).then((res) => {
-        expect(res.status).to.eq(409);
-        expect(res.body.ok).to.be.false;
-        expect(res.body.message).to.eq(
-          "Usuário não pode curtir o próprio tweet."
-        );
+        expect(res.status).to.eq(200);
+        expect(res.body.ok).to.be.true;
+        expect(res.body.message).to.eq("Like adicionado com sucesso.");
       });
     });
   });

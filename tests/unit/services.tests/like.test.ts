@@ -81,18 +81,22 @@ describe("LikeService - Testes Unitários", () => {
       );
     });
 
-    it("não deve permitir curtir o próprio tweet", async () => {
+    it("deve permitir curtir o próprio tweet", async () => {
       mockTweetRepository.buscarPorId!.mockResolvedValue({
         ...mockTweet,
         userId: "user1",
       });
 
-      await expect(
-        service.adicionarLike(validDto, "user1")
-      ).rejects.toMatchObject({
-        message: "Usuário não pode curtir o próprio tweet.",
-        statusCode: 409,
-      });
+      mockLikeRepository.buscarLike!.mockResolvedValue(null);
+      mockLikeRepository.adicionarLike!.mockResolvedValue(mockLike);
+
+      const result = await service.adicionarLike(validDto, "user1");
+
+      expect(result).toEqual(mockLike);
+      expect(mockLikeRepository.adicionarLike).toHaveBeenCalledWith(
+        validDto,
+        "user1"
+      );
     });
 
     it("deve lançar erro se o like já existir", async () => {

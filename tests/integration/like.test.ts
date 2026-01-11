@@ -114,14 +114,14 @@ describe("LikeController - Testes de Integração", () => {
       );
     });
 
-    it("deve falhar ao curtir próprio tweet", async () => {
+    it("deve permitir curtir o próprio tweet", async () => {
       const res = await request(app)
         .post(`${baseUrl}/${idTweet}`)
         .set("Authorization", `Bearer ${tokenUsuarioDono}`);
 
-      expect(res.status).toBe(409);
-      expect(res.body.ok).toBe(false);
-      expect(res.body.message).toBe("Usuário não pode curtir o próprio tweet.");
+      expect(res.status).toBe(201);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.message).toBe("Like adicionado com sucesso.");
     });
   });
 
@@ -285,14 +285,14 @@ describe("LikeController - Testes de Integração", () => {
       expect(likeAposRemocao).toBeNull();
     });
 
-    it("não deve permitir curtir o próprio tweet", async () => {
+    it("deve permitir curtir o próprio tweet", async () => {
       const res = await request(app)
         .patch(`${baseUrl}/${idTweet}`)
         .set("Authorization", `Bearer ${tokenUsuarioDono}`);
 
-      expect(res.status).toBe(409);
-      expect(res.body.ok).toBe(false);
-      expect(res.body.message).toBe("Usuário não pode curtir o próprio tweet.");
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.message).toBe("Like adicionado com sucesso.");
     });
 
     it("deve falhar quando tweetId for inválido", async () => {
