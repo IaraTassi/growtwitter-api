@@ -43,7 +43,7 @@ export class FollowController {
   async deixarDeSeguirUsuario(
     req: AuthRequest,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const followerId = req.userId!;

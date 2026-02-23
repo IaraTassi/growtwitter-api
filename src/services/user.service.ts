@@ -12,7 +12,7 @@ export class UserService {
   public setRepositoryParaTestes(repo: UserRepository): void {
     if (process.env.NODE_ENV !== "test") {
       throw new Error(
-        "setRepositoryParaTestes só pode ser usado em ambiente de teste."
+        "setRepositoryParaTestes só pode ser usado em ambiente de teste.",
       );
     }
     this.userRepository = repo;
@@ -51,13 +51,13 @@ export class UserService {
     this.validarEmail(dto.email);
 
     const usuarioExistente = await this.userRepository.buscarPorIdentificador(
-      dto.userName
+      dto.userName,
     );
     if (usuarioExistente)
       throw new AppError("O nome de usuário já está em uso.", 409);
 
     const emailExistente = await this.userRepository.buscarPorIdentificador(
-      dto.email
+      dto.email,
     );
     if (emailExistente) throw new AppError("O email já está em uso.", 409);
 
@@ -83,28 +83,33 @@ export class UserService {
     return usuarioSemSenha;
   }
 
-  async buscarPorId(id: string): Promise<User> {
+  async buscarPorId(id: string): Promise<Omit<User, "password">> {
     this.validarCampo(id, "O ID do usuário é obrigatório.");
 
     const user = await this.userRepository.buscarPorId(id);
     if (!user) throw new AppError("Usuário não encontrado.", 404);
 
-    return user;
+    const { password, ...userSemSenha } = user;
+    return userSemSenha;
   }
 
   async login(
-    dto: UserLoginDto
+    dto: UserLoginDto,
   ): Promise<{ user: Omit<User, "password">; token: string }> {
     this.validarCampo(
       dto.identifier,
-      "O identificador usuário ou email é obrigatório."
+      "O identificador usuário ou email é obrigatório.",
     );
     this.validarCampo(dto.password, "A senha é obrigatória.");
 
     const user = await this.userRepository.buscarPorIdentificador(
-      dto.identifier
+      dto.identifier,
     );
     if (!user) throw new AppError("Usuário não encontrado.", 404);
+
+    if (!user.password) {
+      throw new AppError("Erro interno: senha não encontrada.", 500);
+    }
 
     const senhaValida = await bcrypt.compare(dto.password, user.password);
     if (!senhaValida) throw new AppError("Senha incorreta.", 401);
@@ -121,9 +126,10 @@ export class UserService {
     return { user: userSemSenha, token };
   }
 
-  async listarUsuarios(): Promise<User[]> {
+  async listarUsuarios(): Promise<Omit<User, "password">[]> {
     const users = await this.userRepository.listarUsuarios();
-    return users ?? [];
+
+    return users.map(({ password, ...userSemSenha }) => userSemSenha);
   }
 
   async removerUsuario(id: string): Promise<void> {

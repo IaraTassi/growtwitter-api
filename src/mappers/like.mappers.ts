@@ -22,12 +22,12 @@ export function mapLike(like: LikeComRelacoes, shallow = false): Like {
     user: shallow
       ? undefined
       : like.user
-      ? mapUser(like.user, true)
-      : undefined,
+        ? mapUser(like.user, true)
+        : undefined,
     tweet: shallow
       ? undefined
       : like.tweet
-      ? mapTweet(like.tweet, 1)
-      : undefined,
+        ? mapTweet(like.tweet, 1)
+        : undefined,
   };
 }

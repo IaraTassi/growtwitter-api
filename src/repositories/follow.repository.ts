@@ -5,7 +5,7 @@ import { mapFollow } from "../mappers/follow.mapper";
 export class FollowRepository {
   async seguirUsuario(
     followerId: string,
-    followingId: string
+    followingId: string,
   ): Promise<Follow> {
     const follow = await prisma.follow.create({
       data: { followerId, followingId },
@@ -17,7 +17,7 @@ export class FollowRepository {
 
   async buscarFollow(
     followerId: string,
-    followingId: string
+    followingId: string,
   ): Promise<Follow | null> {
     const follow = await prisma.follow.findUnique({
       where: { followerId_followingId: { followerId, followingId } },
@@ -29,7 +29,7 @@ export class FollowRepository {
 
   async deixarDeSeguirUsuario(
     followerId: string,
-    followingId: string
+    followingId: string,
   ): Promise<void> {
     await prisma.follow.delete({
       where: { followerId_followingId: { followerId, followingId } },

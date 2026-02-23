@@ -26,6 +26,8 @@ export function mapTweet(tweet: TweetComRelacoes, depth = 0): Tweet {
     likes: tweet.likes?.map((l) => mapLike(l, true)) ?? [],
 
     replies:
-      depth < 3 ? tweet.replies?.map((r) => mapTweet(r, depth + 1)) ?? [] : [],
+      depth < 3
+        ? (tweet.replies?.map((r) => mapTweet(r, depth + 1)) ?? [])
+        : [],
   };
 }

@@ -22,7 +22,7 @@ export function mapUser(user: UsuarioComRelacoes, shallow = false): User {
     name: user.name,
     userName: user.userName,
     email: user.email,
-    password: user.password,
+    password: shallow ? undefined : user.password,
     imageUrl: user.imageUrl ?? null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,

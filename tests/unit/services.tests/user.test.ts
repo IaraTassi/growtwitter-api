@@ -59,7 +59,7 @@ describe("UserService - Testes Unitários", () => {
         .mockResolvedValueOnce(null);
 
       await expect(
-        (service as any).criarUsuario(validDto)
+        (service as any).criarUsuario(validDto),
       ).rejects.toMatchObject({
         message: "O nome de usuário já está em uso.",
         statusCode: 409,
@@ -72,7 +72,7 @@ describe("UserService - Testes Unitários", () => {
         .mockResolvedValueOnce({ id: "1" } as any);
 
       await expect(
-        (service as any).criarUsuario(validDto)
+        (service as any).criarUsuario(validDto),
       ).rejects.toMatchObject({
         message: "O email já está em uso.",
         statusCode: 409,
@@ -88,14 +88,14 @@ describe("UserService - Testes Unitários", () => {
       "deve lançar erro se campo %s estiver vazio",
       async (campo, mensagem) => {
         await expect(
-          (service as any).criarUsuario({ ...validDto, [campo]: "" })
+          (service as any).criarUsuario({ ...validDto, [campo]: "" }),
         ).rejects.toMatchObject({ message: mensagem, statusCode: 400 });
-      }
+      },
     );
 
     it("deve lançar erro se senha tiver menos de 6 caracteres", async () => {
       await expect(
-        (service as any).criarUsuario({ ...validDto, password: "123" })
+        (service as any).criarUsuario({ ...validDto, password: "123" }),
       ).rejects.toMatchObject({
         message: "A senha deve ter pelo menos 6 caracteres.",
         statusCode: 400,
@@ -104,7 +104,7 @@ describe("UserService - Testes Unitários", () => {
 
     it("deve lançar erro se email inválido", async () => {
       await expect(
-        (service as any).criarUsuario({ ...validDto, email: "invalidemail" })
+        (service as any).criarUsuario({ ...validDto, email: "invalidemail" }),
       ).rejects.toMatchObject({
         message: "Email inválido.",
         statusCode: 400,
@@ -113,7 +113,7 @@ describe("UserService - Testes Unitários", () => {
 
     it("deve lançar erro se senha não for informada", async () => {
       await expect(
-        service.registrar({ ...validDto, password: "" })
+        service.registrar({ ...validDto, password: "" }),
       ).rejects.toMatchObject({
         message: "A senha é obrigatória.",
         statusCode: 400,
@@ -215,6 +215,18 @@ describe("UserService - Testes Unitários", () => {
         statusCode: 404,
       });
     });
+
+    it("não deve expor a senha ao buscar usuário por ID", async () => {
+      mockRepository.buscarPorId.mockResolvedValue({
+        id: "1",
+        ...validDto,
+        password: "hashed",
+      } as any);
+
+      const result = await service.buscarPorId("1");
+
+      expect(result).not.toHaveProperty("password");
+    });
   });
 
   describe("UserService - login", () => {
@@ -232,14 +244,14 @@ describe("UserService - Testes Unitários", () => {
 
       expect(result).toHaveProperty("token", "fake_token");
       expect(mockRepository.buscarPorIdentificador).toHaveBeenCalledWith(
-        "testuser"
+        "testuser",
       );
       expect(bcrypt.compare).toHaveBeenCalledWith("123456", "hashed");
     });
 
     it("deve lançar erro se identificador não for informado", async () => {
       await expect(
-        service.login({ ...loginDto, identifier: "" })
+        service.login({ ...loginDto, identifier: "" }),
       ).rejects.toMatchObject({
         message: "O identificador usuário ou email é obrigatório.",
         statusCode: 400,
@@ -248,7 +260,7 @@ describe("UserService - Testes Unitários", () => {
 
     it("deve lançar erro se senha não for informada", async () => {
       await expect(
-        service.login({ ...loginDto, password: "" })
+        service.login({ ...loginDto, password: "" }),
       ).rejects.toMatchObject({
         message: "A senha é obrigatória.",
         statusCode: 400,
@@ -323,6 +335,21 @@ describe("UserService - Testes Unitários", () => {
 
       expect(result).toEqual([]);
       expect(mockRepository.listarUsuarios).toHaveBeenCalled();
+    });
+
+    it("não deve expor a senha na listagem de usuários", async () => {
+      const usersMock = [
+        { id: "1", ...validDto, password: "hashed" },
+        { id: "2", ...validDto, password: "hashed" },
+      ] as any;
+
+      mockRepository.listarUsuarios.mockResolvedValue(usersMock);
+
+      const result = await service.listarUsuarios();
+
+      result.forEach((user) => {
+        expect(user).not.toHaveProperty("password");
+      });
     });
   });
 

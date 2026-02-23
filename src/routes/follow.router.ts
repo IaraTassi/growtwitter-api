@@ -10,6 +10,7 @@ import { validarCamposFollow } from "../middlewares/follow.middleware";
  * POST    /:userId          → seguirUsuario()
  * GET     /:userId          → buscarFollow()
  * DELETE  /:userId          → deixarDeSeguirUsuario()
+ * GET     /me               → listarFollowing()
  */
 
 const followRoutes = Router();
@@ -20,21 +21,21 @@ followRoutes.post(
   authMiddleware,
   validarCamposFollow,
   validateUUIDParams,
-  (req, res, next) => followController.seguirUsuario(req, res, next)
+  (req, res, next) => followController.seguirUsuario(req, res, next),
 );
 
 followRoutes.get(
   "/:userId",
   authMiddleware,
   validateUUIDParams,
-  (req, res, next) => followController.buscarFollow(req, res, next)
+  (req, res, next) => followController.buscarFollow(req, res, next),
 );
 
 followRoutes.delete(
   "/:userId",
   authMiddleware,
   validateUUIDParams,
-  (req, res, next) => followController.deixarDeSeguirUsuario(req, res, next)
+  (req, res, next) => followController.deixarDeSeguirUsuario(req, res, next),
 );
 
 export default followRoutes;

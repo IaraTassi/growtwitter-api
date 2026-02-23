@@ -82,7 +82,7 @@ describe("Usuários - E2E", () => {
         expect(res.status).to.eq(400);
         expect(res.body.ok).to.be.false;
         expect(res.body.message).to.eq(
-          "A senha é obrigatória e deve ter pelo menos 6 caracteres."
+          "A senha é obrigatória e deve ter pelo menos 6 caracteres.",
         );
       });
     });
@@ -185,6 +185,17 @@ describe("Usuários - E2E", () => {
         expect(res.body.users.length).to.be.greaterThan(0);
       });
     });
+
+    it("Não deve expor a senha na listagem de usuários", () => {
+      listarUsuarios().then((res) => {
+        expect(res.status).to.eq(200);
+        expect(res.body.ok).to.be.true;
+
+        res.body.users.forEach((user: any) => {
+          expect(user).to.not.have.property("password");
+        });
+      });
+    });
   });
 
   describe("GET /api/users/:userId - buscarPorId", () => {
@@ -244,6 +255,14 @@ describe("Usuários - E2E", () => {
         expect(res.status).to.eq(401);
         expect(res.body.ok).to.be.false;
         expect(res.body.message).to.eq("Token inválido ou expirado.");
+      });
+    });
+
+    it("Não deve expor a senha ao buscar usuário por ID", () => {
+      buscarPorIdUsuario(token, userId).then((res) => {
+        expect(res.status).to.eq(200);
+        expect(res.body.ok).to.be.true;
+        expect(res.body.user).to.not.have.property("password");
       });
     });
   });

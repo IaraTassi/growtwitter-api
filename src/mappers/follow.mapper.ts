@@ -16,12 +16,12 @@ export function mapFollow(follow: FollowComRelacoes, shallow = false): Follow {
     follower: shallow
       ? undefined
       : follow.follower
-      ? mapUser(follow.follower, true)
-      : undefined,
+        ? mapUser(follow.follower, true)
+        : undefined,
     following: shallow
       ? undefined
       : follow.following
-      ? mapUser(follow.following, true)
-      : undefined,
+        ? mapUser(follow.following, true)
+        : undefined,
   };
 }
