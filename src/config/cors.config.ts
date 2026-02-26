@@ -4,7 +4,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",").map((o) =>
-  o.trim()
+  o.trim(),
 ) || ["http://localhost:3000"];
 
 export const corsOptions: CorsOptions = {
@@ -15,7 +15,7 @@ export const corsOptions: CorsOptions = {
       callback(new Error(`Origem '${origin}' não permitida pelo CORS`));
     }
   },
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
