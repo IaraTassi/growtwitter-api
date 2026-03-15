@@ -9,7 +9,7 @@ export class TweetService {
   public setRepositoryParaTestes(repo: TweetRepository): void {
     if (process.env.NODE_ENV !== "test") {
       throw new Error(
-        "setRepositoryParaTestes só pode ser usado em ambiente de teste."
+        "setRepositoryParaTestes só pode ser usado em ambiente de teste.",
       );
     }
     this.tweetRepository = repo;
@@ -21,14 +21,14 @@ export class TweetService {
 
   private validarConteudo(
     content: string,
-    tipo: "tweet" | "resposta" = "tweet"
+    tipo: "tweet" | "resposta" = "tweet",
   ) {
     if (content.trim().length === 0) {
       throw new AppError(
         tipo === "tweet"
           ? "O conteúdo do tweet não pode estar vazio."
           : "O conteúdo da resposta não pode estar vazio.",
-        400
+        400,
       );
     }
 
@@ -37,7 +37,7 @@ export class TweetService {
         tipo === "tweet"
           ? "O tweet não pode ter mais de 280 caracteres."
           : "A resposta não pode ter mais de 280 caracteres.",
-        400
+        400,
       );
     }
   }
@@ -79,7 +79,7 @@ export class TweetService {
   async buscarReplies(
     tweetId: string,
     skip = 0,
-    take = 5
+    take = 5,
   ): Promise<{ replies: Tweet[]; totalCount: number }> {
     this.validarCampo(tweetId, "O ID do tweet é obrigatório.");
 
@@ -91,9 +91,26 @@ export class TweetService {
     const { replies, totalCount } = await this.tweetRepository.buscarReplies(
       tweetId,
       skip,
-      take
+      take,
     );
 
     return { replies, totalCount };
+  }
+
+  async deletarTweet(tweetId: string, userId: string): Promise<void> {
+    this.validarCampo(userId, "O ID do usuário é obrigatório.");
+    this.validarCampo(tweetId, "O ID do tweet é obrigatório.");
+
+    const tweet = await this.buscarPorId(tweetId);
+    if (!tweet) throw new AppError("Tweet não encontrado", 404);
+
+    if (tweet.userId !== userId) {
+      throw new AppError(
+        "Usuário não tem permissão para deletar este tweet",
+        403,
+      );
+    }
+
+    await this.tweetRepository.deletarTweet(tweetId, userId);
   }
 }

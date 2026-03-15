@@ -15,17 +15,18 @@ import { validateUUIDParams } from "../middlewares/validate.UUID.middleware";
  * POST   /:parentId/reply        → criarReply()
  * GET    /:tweetId/replies       → buscarReplies()
  * GET    /:id                    → buscarPorId()
+ * DELETE /:id                    → deletarTweety)
  */
 
 const tweetRoutes = Router();
 const tweetController = new TweetController();
 
 tweetRoutes.get("/feed", authMiddleware, (req, res, next) =>
-  tweetController.buscarFeedUsuario(req, res, next)
+  tweetController.buscarFeedUsuario(req, res, next),
 );
 
 tweetRoutes.post("/", authMiddleware, validarCamposTweet, (req, res, next) =>
-  tweetController.criarTweet(req, res, next)
+  tweetController.criarTweet(req, res, next),
 );
 
 tweetRoutes.post(
@@ -33,15 +34,23 @@ tweetRoutes.post(
   validateUUIDParams,
   authMiddleware,
   validarCamposReply,
-  (req, res, next) => tweetController.criarReply(req, res, next)
+  (req, res, next) => tweetController.criarReply(req, res, next),
 );
 
 tweetRoutes.get("/:tweetId/replies", validateUUIDParams, (req, res, next) =>
-  tweetController.buscarReplies(req, res, next)
+  tweetController.buscarReplies(req, res, next),
 );
 
 tweetRoutes.get("/:id", validateUUIDParams, (req, res, next) =>
-  tweetController.buscarPorId(req, res, next)
+  tweetController.buscarPorId(req, res, next),
+);
+
+tweetRoutes.delete(
+  "/:id",
+  validateUUIDParams,
+  authMiddleware,
+
+  tweetController.deletarTweet,
 );
 
 export default tweetRoutes;

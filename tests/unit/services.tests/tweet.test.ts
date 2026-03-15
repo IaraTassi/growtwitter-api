@@ -18,6 +18,7 @@ describe("TweetService - Testes Unitários", () => {
       criarReply: jest.fn(),
       buscarFeedUsuario: jest.fn(),
       buscarReplies: jest.fn(),
+      deletarTweet: jest.fn(),
     } as jest.Mocked<TweetRepository>;
 
     service = new TweetService();
@@ -41,7 +42,7 @@ describe("TweetService - Testes Unitários", () => {
       expect(result).toEqual(mockTweet);
       expect(mockRepository.criarTweet).toHaveBeenCalledWith(
         validTweetDto,
-        "user1"
+        "user1",
       );
     });
 
@@ -50,13 +51,13 @@ describe("TweetService - Testes Unitários", () => {
         {
           message: "O ID do usuário é obrigatório.",
           statusCode: 400,
-        }
+        },
       );
     });
 
     it("deve lançar erro se content não for informado", async () => {
       await expect(
-        service.criarTweet({ content: "" }, "user1")
+        service.criarTweet({ content: "" }, "user1"),
       ).rejects.toMatchObject({
         message: "O conteúdo do tweet é obrigatório.",
         statusCode: 400,
@@ -65,7 +66,7 @@ describe("TweetService - Testes Unitários", () => {
 
     it("deve lançar erro se o tweet estiver vazio ou apenas espaços", async () => {
       await expect(
-        service.criarTweet({ content: "   " }, "user1")
+        service.criarTweet({ content: "   " }, "user1"),
       ).rejects.toMatchObject({
         message: "O conteúdo do tweet é obrigatório.",
         statusCode: 400,
@@ -75,7 +76,7 @@ describe("TweetService - Testes Unitários", () => {
     it("deve lançar erro se o tweet exceder 280 caracteres", async () => {
       const longContent = "a".repeat(281);
       await expect(
-        service.criarTweet({ content: longContent }, "user1")
+        service.criarTweet({ content: longContent }, "user1"),
       ).rejects.toMatchObject({
         message: "O tweet não pode ter mais de 280 caracteres.",
         statusCode: 400,
@@ -108,7 +109,7 @@ describe("TweetService - Testes Unitários", () => {
         {
           message: "Tweet não encontrado.",
           statusCode: 404,
-        }
+        },
       );
     });
   });
@@ -136,7 +137,7 @@ describe("TweetService - Testes Unitários", () => {
       expect(result).toEqual(mockReply);
       expect(mockRepository.criarReply).toHaveBeenCalledWith(
         validReplyDto,
-        "user1"
+        "user1",
       );
     });
 
@@ -145,13 +146,13 @@ describe("TweetService - Testes Unitários", () => {
         {
           message: "O ID do usuário é obrigatório.",
           statusCode: 400,
-        }
+        },
       );
     });
 
     it("deve lançar erro se content não for informado", async () => {
       await expect(
-        service.criarReply({ ...validReplyDto, content: "" }, "user1")
+        service.criarReply({ ...validReplyDto, content: "" }, "user1"),
       ).rejects.toMatchObject({
         message: "O conteúdo da resposta não pode estar vazio.",
         statusCode: 400,
@@ -160,7 +161,7 @@ describe("TweetService - Testes Unitários", () => {
 
     it("deve lançar erro se parentId não for informado", async () => {
       await expect(
-        service.criarReply({ content: "resposta", parentId: "" }, "user1")
+        service.criarReply({ content: "resposta", parentId: "" }, "user1"),
       ).rejects.toMatchObject({
         message: "O ID do tweet original é obrigatório.",
         statusCode: 400,
@@ -169,7 +170,7 @@ describe("TweetService - Testes Unitários", () => {
 
     it("deve lançar erro se conteúdo da resposta estiver vazio ou apenas espaços", async () => {
       await expect(
-        service.criarReply({ content: "   ", parentId: "tweet123" }, "user1")
+        service.criarReply({ content: "   ", parentId: "tweet123" }, "user1"),
       ).rejects.toMatchObject({
         message: "O conteúdo da resposta não pode estar vazio.",
         statusCode: 400,
@@ -179,7 +180,7 @@ describe("TweetService - Testes Unitários", () => {
     it("deve lançar erro 404 se tweet original não existir", async () => {
       mockRepository.buscarPorId.mockResolvedValue(null);
       await expect(
-        service.criarReply(validReplyDto, "user1")
+        service.criarReply(validReplyDto, "user1"),
       ).rejects.toMatchObject({
         message: "Tweet não encontrado.",
         statusCode: 404,
@@ -209,7 +210,7 @@ describe("TweetService - Testes Unitários", () => {
       expect(result).toEqual(mockReply);
       expect(mockRepository.criarReply).toHaveBeenCalledWith(
         validReplyDto,
-        "user1"
+        "user1",
       );
     });
   });
@@ -313,11 +314,66 @@ describe("TweetService - Testes Unitários", () => {
       expect(mockRepository.buscarReplies).toHaveBeenCalledWith(
         tweetId,
         skip,
-        take
+        take,
       );
       expect(result).toEqual({
         replies: mockReplies,
         totalCount: 10,
+      });
+    });
+  });
+
+  describe("TweetService - deletarTweet", () => {
+    it("deve deletar um tweet com sucesso", async () => {
+      mockRepository.buscarPorId = jest
+        .fn()
+        .mockResolvedValue({ id: "tweet123", userId: "user1" });
+
+      mockRepository.deletarTweet = jest.fn().mockResolvedValue(undefined);
+
+      await service.deletarTweet("tweet123", "user1");
+
+      expect(mockRepository.deletarTweet).toHaveBeenCalledWith(
+        "tweet123",
+        "user1",
+      );
+    });
+
+    it("deve lançar erro se id do tweet não for informado", async () => {
+      await expect(service.deletarTweet("", "user1")).rejects.toMatchObject({
+        message: "O ID do tweet é obrigatório.",
+        statusCode: 400,
+      });
+    });
+
+    it("deve lançar erro se userId não for informado", async () => {
+      await expect(service.deletarTweet("tweet123", "")).rejects.toMatchObject({
+        message: "O ID do usuário é obrigatório.",
+        statusCode: 400,
+      });
+    });
+
+    it("deve lançar erro se o tweet não existir", async () => {
+      mockRepository.buscarPorId = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.deletarTweet("tweetInexistente", "user1"),
+      ).rejects.toMatchObject({
+        message: "Tweet não encontrado.",
+        statusCode: 404,
+      });
+    });
+
+    it("deve lançar erro se o usuário não for dono do tweet", async () => {
+      mockRepository.buscarPorId = jest
+        .fn()
+        .mockResolvedValue({ id: "tweet123", userId: "outroUser" });
+
+      await expect(
+        service.deletarTweet("tweet123", "user1"),
+      ).rejects.toMatchObject({
+        message: "Usuário não tem permissão para deletar este tweet",
+        statusCode: 403,
       });
     });
   });

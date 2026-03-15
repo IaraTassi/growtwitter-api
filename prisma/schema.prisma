@@ -33,9 +33,10 @@ model Tweet {
   updatedAt DateTime @updatedAt @map("updated_at")
   likes     Like[]
   user      User     @relation(fields: [userId], references: [id])
-  parent    Tweet?   @relation("replies", fields: [parentId], references: [id])
+  parent    Tweet?   @relation("replies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Tweet[]  @relation("replies")
 
+  @@index([parentId])
   @@map("tweet")
 }
 
@@ -44,7 +45,7 @@ model Like {
   tweetId   String   @map("id_tweet") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  tweet     Tweet    @relation(fields: [tweetId], references: [id])
+  tweet     Tweet    @relation(fields: [tweetId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id])
 
   @@id([userId, tweetId])

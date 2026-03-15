@@ -85,7 +85,7 @@ export class TweetRepository {
   async buscarReplies(
     tweetId: string,
     skip = 0,
-    take = 5
+    take = 5,
   ): Promise<{ replies: Tweet[]; totalCount: number }> {
     const totalCount = await prisma.tweet.count({
       where: { parentId: tweetId },
@@ -106,5 +106,16 @@ export class TweetRepository {
     });
 
     return { replies: replies.map(mapTweet), totalCount };
+  }
+
+  async deletarTweet(tweetId: string, userId: string): Promise<void> {
+    await prisma.tweet.findUnique({
+      where: { id: tweetId },
+      select: { userId: true },
+    });
+
+    await prisma.tweet.delete({
+      where: { id: tweetId },
+    });
   }
 }

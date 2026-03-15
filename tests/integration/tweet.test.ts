@@ -1,7 +1,7 @@
 import request from "supertest";
+import app from "../../src/app";
 import { prisma } from "../../src/config/prisma.config";
 import { limparBanco } from "../setup";
-import app from "../../src/app";
 
 describe("TweetController - Testes de Integração Avançados", () => {
   const baseUrl = "/api/tweets";
@@ -114,7 +114,7 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.status).toBe(401);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe(
-        "Token de autenticação não fornecido ou inválido."
+        "Token de autenticação não fornecido ou inválido.",
       );
     });
 
@@ -139,7 +139,7 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.status).toBe(400);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe(
-        "O tweet não pode ter mais de 280 caracteres."
+        "O tweet não pode ter mais de 280 caracteres.",
       );
     });
   });
@@ -160,7 +160,7 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.status).toBe(400);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe(
-        'O parâmetro "id" é inválido ou ausente. Deve ser um UUID válido.'
+        'O parâmetro "id" é inválido ou ausente. Deve ser um UUID válido.',
       );
     });
 
@@ -209,7 +209,7 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.status).toBe(400);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe(
-        'O parâmetro "parentId" é inválido ou ausente. Deve ser um UUID válido.'
+        'O parâmetro "parentId" é inválido ou ausente. Deve ser um UUID válido.',
       );
     });
 
@@ -233,7 +233,7 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.status).toBe(401);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe(
-        "Token de autenticação não fornecido ou inválido."
+        "Token de autenticação não fornecido ou inválido.",
       );
     });
 
@@ -354,14 +354,14 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(Array.isArray(res.body.replies)).toBe(true);
       expect(typeof res.body.totalCount).toBe("number");
       expect(res.body.totalCount).toBeGreaterThanOrEqual(
-        res.body.replies.length
+        res.body.replies.length,
       );
 
       expect(res.body.replies.some((r: any) => r.parentId === tweetId)).toBe(
-        true
+        true,
       );
       const nestedReply = res.body.replies.some(
-        (r: any) => r.replies?.length > 0
+        (r: any) => r.replies?.length > 0,
       );
       expect(nestedReply).toBe(true);
 
@@ -374,7 +374,7 @@ describe("TweetController - Testes de Integração Avançados", () => {
       });
 
       const res = await request(app).get(
-        `${baseUrl}/${tweetSemReplies.id}/replies`
+        `${baseUrl}/${tweetSemReplies.id}/replies`,
       );
 
       expect(res.status).toBe(200);
@@ -391,7 +391,7 @@ describe("TweetController - Testes de Integração Avançados", () => {
       expect(res.status).toBe(400);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe(
-        'O parâmetro "tweetId" é inválido ou ausente. Deve ser um UUID válido.'
+        'O parâmetro "tweetId" é inválido ou ausente. Deve ser um UUID válido.',
       );
     });
 
@@ -407,13 +407,77 @@ describe("TweetController - Testes de Integração Avançados", () => {
 
     it("deve respeitar skip e take para paginação", async () => {
       const res = await request(app).get(
-        `${baseUrl}/${tweetId}/replies?skip=1&take=1`
+        `${baseUrl}/${tweetId}/replies?skip=1&take=1`,
       );
 
       expect(res.status).toBe(200);
       expect(res.body.ok).toBe(true);
       expect(res.body.replies.length).toBeLessThanOrEqual(1);
       expect(typeof res.body.totalCount).toBe("number");
+    });
+  });
+
+  describe("DELETE /api/tweets/:id - deletarTweet", () => {
+    it("deve deletar o próprio tweet com sucesso", async () => {
+      const res = await request(app)
+        .delete(`${baseUrl}/${tweetId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.message).toBe("Tweet deletado com sucesso.");
+
+      const tweet = await prisma.tweet.findUnique({
+        where: { id: tweetId },
+      });
+      expect(tweet).toBeNull();
+    });
+
+    it("deve falhar ao tentar deletar tweet de outro usuário", async () => {
+      const otherTweet = await prisma.tweet.create({
+        data: { content: "Tweet do other", userId: otherId },
+      });
+
+      const res = await request(app)
+        .delete(`${baseUrl}/${otherTweet.id}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe(
+        "Usuário não tem permissão para deletar este tweet",
+      );
+    });
+
+    it("deve falhar ao deletar tweet inexistente", async () => {
+      const fakeId = "00000000-0000-0000-0000-000000000000";
+      const res = await request(app)
+        .delete(`${baseUrl}/${fakeId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe("Tweet não encontrado.");
+    });
+
+    it("deve falhar sem token", async () => {
+      const res = await request(app).delete(`${baseUrl}/${tweetId}`);
+
+      expect(res.status).toBe(401);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe(
+        "Token de autenticação não fornecido ou inválido.",
+      );
+    });
+
+    it("deve falhar com token inválido", async () => {
+      const res = await request(app)
+        .delete(`${baseUrl}/${tweetId}`)
+        .set("Authorization", "Bearer token-invalido");
+
+      expect(res.status).toBe(401);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.message).toBe("Token inválido ou expirado.");
     });
   });
 });

@@ -104,11 +104,19 @@ export const buscarReplies = (
   token: string,
   tweetId: string,
   page = 1,
-  limit = 5
+  limit = 5,
 ) =>
   cy.request({
     method: "GET",
     url: `${baseTweetUrl}/${tweetId}/replies?page=${page}&limit=${limit}`,
+    headers: { Authorization: `Bearer ${token}` },
+    failOnStatusCode: false,
+  });
+
+export const deletarTweet = (token: string, tweetId: string) =>
+  cy.request({
+    method: "DELETE",
+    url: `${baseTweetUrl}/${tweetId}`,
     headers: { Authorization: `Bearer ${token}` },
     failOnStatusCode: false,
   });

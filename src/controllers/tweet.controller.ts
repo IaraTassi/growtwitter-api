@@ -43,7 +43,7 @@ export class TweetController {
       const { parentId } = req.params;
       const reply = await tweetService.criarReply(
         { content, parentId },
-        userId!
+        userId!,
       );
 
       return res.status(201).json({
@@ -84,7 +84,7 @@ export class TweetController {
       const { replies, totalCount } = await tweetService.buscarReplies(
         tweetId,
         skip,
-        take
+        take,
       );
 
       return res.status(200).json({
@@ -92,6 +92,22 @@ export class TweetController {
         message: "Replies encontradas com sucesso.",
         replies,
         totalCount,
+      });
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
+  async deletarTweet(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.userId!;
+      const { id } = req.params;
+
+      await tweetService.deletarTweet(id, userId);
+
+      return res.status(200).json({
+        ok: true,
+        message: "Tweet deletado com sucesso.",
       });
     } catch (error: any) {
       next(error);

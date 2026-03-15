@@ -1,12 +1,13 @@
 import tweets from "../fixtures/tweets.json";
 import users from "../fixtures/users.json";
 import {
-  criarTweet,
-  criarReply,
-  buscarPorIdTweet,
   buscarFeedUsuario,
+  buscarPorIdTweet,
   buscarReplies,
+  criarReply,
+  criarTweet,
   criarUsuario,
+  deletarTweet,
   login,
 } from "../support/api";
 
@@ -119,9 +120,9 @@ describe("Tweets - E2E", () => {
                   expect(r2.body.tweet.parentId).to.eq(reply1Id);
                 });
               });
-            }
+            },
           );
-        }
+        },
       );
     });
   });
@@ -251,7 +252,7 @@ describe("Tweets - E2E", () => {
         const primeiraPagina = res1.body.feed;
         if (primeiraPagina.length < 3) {
           cy.log(
-            "Feed não possui itens suficientes para criar duas páginas reais."
+            "Feed não possui itens suficientes para criar duas páginas reais.",
           );
           return;
         }
@@ -310,7 +311,7 @@ describe("Tweets - E2E", () => {
         expect(res.status).to.eq(400);
         expect(res.body.ok).to.be.false;
         expect(res.body.message).to.eq(
-          'O parâmetro "tweetId" é inválido ou ausente. Deve ser um UUID válido.'
+          'O parâmetro "tweetId" é inválido ou ausente. Deve ser um UUID válido.',
         );
       });
     });
@@ -346,6 +347,60 @@ describe("Tweets - E2E", () => {
         expect(res.body.replies).to.be.an("array");
         expect(res.body.replies.length).to.be.lte(2);
         expect(res.body.totalCount).to.be.a("number");
+      });
+    });
+  });
+
+  describe("DELETE /api/tweets/:id - deletarTweet", () => {
+    it("Deleta o próprio tweet com sucesso", () => {
+      criarTweet(tokenDono, tweets.validTweet).then((res) => {
+        const tweetParaDeletar = res.body.tweet.id;
+
+        deletarTweet(tokenDono, tweetParaDeletar).then((res) => {
+          expect(res.status).to.eq(200);
+          expect(res.body.ok).to.be.true;
+          expect(res.body.message).to.eq("Tweet deletado com sucesso.");
+
+          buscarPorIdTweet(tokenDono, tweetParaDeletar).then((getRes) => {
+            expect(getRes.status).to.eq(404);
+          });
+        });
+      });
+    });
+
+    it("Falha ao tentar deletar tweet de outro usuário", () => {
+      criarTweet(tokenOutro, tweets.validTweet).then((res) => {
+        const tweetOutro = res.body.tweet.id;
+
+        deletarTweet(tokenDono, tweetOutro).then((res) => {
+          expect(res.status).to.eq(403);
+          expect(res.body.ok).to.be.false;
+          expect(res.body.message).to.eq(
+            "Usuário não tem permissão para deletar este tweet",
+          );
+        });
+      });
+    });
+
+    it("Falha ao deletar tweet inexistente", () => {
+      deletarTweet(tokenDono, NON_EXISTENT_ID).then((res) => {
+        expect(res.status).to.eq(404);
+        expect(res.body.ok).to.be.false;
+        expect(res.body.message).to.eq("Tweet não encontrado.");
+      });
+    });
+
+    it("Falha ao deletar sem token", () => {
+      deletarTweet("", tweetId).then((res) => {
+        expect(res.status).to.eq(401);
+        expect(res.body.ok).to.be.false;
+      });
+    });
+
+    it("Falha ao deletar com id inválido", () => {
+      deletarTweet(tokenDono, INVALID_ID).then((res) => {
+        expect(res.status).to.be.oneOf([400, 404]);
+        expect(res.body.ok).to.be.false;
       });
     });
   });
