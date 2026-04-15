@@ -28,50 +28,10 @@ export class UserRepository {
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
-        tweets: {
-          include: {
-            user: true,
-            likes: { include: { user: true } },
-            replies: {
-              include: {
-                user: true,
-                likes: { include: { user: true } },
-                replies: {
-                  include: {
-                    user: true,
-                    likes: { include: { user: true } },
-                  },
-                },
-              },
-            },
-          },
-        },
-        likes: {
-          include: {
-            tweet: {
-              include: {
-                user: true,
-                likes: { include: { user: true } },
-                replies: {
-                  include: {
-                    user: true,
-                    likes: { include: { user: true } },
-                  },
-                },
-              },
-            },
-          },
-        },
-        followers: {
-          include: {
-            follower: true,
-          },
-        },
-        following: {
-          include: {
-            following: true,
-          },
-        },
+        tweets: true,
+        followers: true,
+        following: true,
+        likes: true,
       },
     });
 
