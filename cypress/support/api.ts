@@ -4,6 +4,7 @@ const baseUrl = "http://localhost:3000/api/users";
 const baseTweetUrl = "http://localhost:3000/api/tweets";
 const baseLikeUrl = "http://localhost:3000/api/likes";
 const baseFollowUrl = "http://localhost:3000/api/follows";
+const baseProfileUrl = "http://localhost:3000/api/profile";
 
 export const criarUsuario = (user: any) => {
   return cy.request({
@@ -165,6 +166,30 @@ export const deixarDeSeguirUsuario = (token: string, userId: string) =>
   cy.request({
     method: "DELETE",
     url: `${baseFollowUrl}/${userId}`,
+    headers: { Authorization: `Bearer ${token}` },
+    failOnStatusCode: false,
+  });
+
+export const getProfileTweets = (userId: string, token: string) =>
+  cy.request({
+    method: "GET",
+    url: `${baseProfileUrl}/${userId}/tweets`,
+    headers: { Authorization: `Bearer ${token}` },
+    failOnStatusCode: false,
+  });
+
+export const getProfileReplies = (userId: string, token: string) =>
+  cy.request({
+    method: "GET",
+    url: `${baseProfileUrl}/${userId}/replies`,
+    headers: { Authorization: `Bearer ${token}` },
+    failOnStatusCode: false,
+  });
+
+export const getProfileLikes = (userId: string, token: string) =>
+  cy.request({
+    method: "GET",
+    url: `${baseProfileUrl}/${userId}/likes`,
     headers: { Authorization: `Bearer ${token}` },
     failOnStatusCode: false,
   });

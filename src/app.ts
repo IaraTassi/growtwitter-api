@@ -8,6 +8,7 @@ import userRoutes from "./routes/user.router";
 import tweetRoutes from "./routes/tweet.router";
 import likeRoutes from "./routes/like.router";
 import followRoutes from "./routes/follow.router";
+import profileRoutes from "./routes/profile.router";
 
 if (process.env.NODE_ENV === "development") {
   dotenv.config({ path: ".env.dev" });
@@ -26,6 +27,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/tweets", tweetRoutes);
 app.use("/api/likes", likeRoutes);
 app.use("/api/follows", followRoutes);
+app.use("/api/profile", profileRoutes);
 
 app.use(errorHandler);
 
