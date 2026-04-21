@@ -41,9 +41,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.test.json" }
-  ]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "tests", "cypress"]
 }
