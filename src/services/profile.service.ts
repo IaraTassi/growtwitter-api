@@ -36,6 +36,16 @@ export class ProfileService {
     return tweets.map(mapProfileTweetResponse);
   }
 
+  private async getRootId(tweetId: string): Promise<string | null> {
+    let current = await this.profileRepository.findTweetById(tweetId);
+
+    while (current?.parentId) {
+      current = await this.profileRepository.findTweetById(current.parentId);
+    }
+
+    return current?.id ?? null;
+  }
+
   async getProfileReplies(
     userId: string,
     loggedUserId: string,
@@ -43,12 +53,21 @@ export class ProfileService {
     this.validarCampo(userId, "O ID do usuário é obrigatório.");
     await this.validarUsuarioExistente(userId);
 
-    const replies = await this.profileRepository.findProfileReplies(
-      userId,
+    const replies = await this.profileRepository.findUserRepliesIds(userId);
+
+    const rootIds = new Set<string>();
+
+    for (const reply of replies) {
+      const rootId = await this.getRootId(reply.id);
+      if (rootId) rootIds.add(rootId);
+    }
+
+    const conversations = await this.profileRepository.findConversations(
+      Array.from(rootIds),
       loggedUserId,
     );
 
-    return replies.map(mapProfileTweetResponse);
+    return conversations.map(mapProfileTweetResponse);
   }
 
   async getProfileLikes(

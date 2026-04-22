@@ -7,6 +7,10 @@ describe("ProfileService", () => {
   let mockProfileRepository: jest.Mocked<ProfileRepository>;
   let mockUserRepository: jest.Mocked<UserRepository>;
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   const mockUser = {
     id: "user1",
     name: "User",
@@ -29,7 +33,15 @@ describe("ProfileService", () => {
       imageUrl: null,
     },
 
-    parent: null,
+    parent: {
+      id: "parent1",
+      user: {
+        id: "user2",
+        name: "Parent",
+        userName: "parent",
+        imageUrl: null,
+      },
+    },
 
     likes: [{ userId: "user1" }],
 
@@ -44,6 +56,9 @@ describe("ProfileService", () => {
       findProfileTweets: jest.fn(),
       findProfileReplies: jest.fn(),
       findProfileLikes: jest.fn(),
+      findTweetById: jest.fn(),
+      findUserRepliesIds: jest.fn(),
+      findConversations: jest.fn(),
     } as any;
 
     mockUserRepository = {
@@ -119,53 +134,143 @@ describe("ProfileService", () => {
     });
   });
 
+  describe("ProfileService - getRootId", () => {
+    it("deve subir até o root corretamente", async () => {
+      const serviceAny = service as any;
+
+      jest
+        .spyOn(mockProfileRepository, "findTweetById")
+        .mockResolvedValueOnce({ id: "3", parentId: "2" } as any)
+        .mockResolvedValueOnce({ id: "2", parentId: "1" } as any)
+        .mockResolvedValueOnce({ id: "1", parentId: null } as any);
+
+      const rootId = await serviceAny.getRootId("3");
+
+      expect(rootId).toBe("1");
+    });
+
+    it("deve retornar o próprio id se já for root", async () => {
+      const serviceAny = service as any;
+
+      jest
+        .spyOn(mockProfileRepository, "findTweetById")
+        .mockResolvedValueOnce({ id: "1", parentId: null } as any);
+
+      const rootId = await serviceAny.getRootId("1");
+
+      expect(rootId).toBe("1");
+    });
+
+    it("deve retornar null se tweet não existir", async () => {
+      const serviceAny = service as any;
+
+      jest
+        .spyOn(mockProfileRepository, "findTweetById")
+        .mockResolvedValueOnce(null);
+
+      const rootId = await serviceAny.getRootId("999");
+
+      expect(rootId).toBeNull();
+    });
+  });
+
   describe("ProfileService - getProfileReplies", () => {
-    it("deve retornar replies", async () => {
-      mockProfileRepository.findProfileReplies.mockResolvedValue([
-        makeTweet(),
-      ] as any);
+    it("deve retornar lista de tweets da conversa", async () => {
+      mockProfileRepository.findUserRepliesIds = jest
+        .fn()
+        .mockResolvedValue([{ id: "reply1" }]);
+
+      jest.spyOn(service as any, "getRootId").mockResolvedValue("root1");
+
+      const tweet = makeTweet();
+
+      mockProfileRepository.findConversations = jest
+        .fn()
+        .mockResolvedValue([tweet] as any);
 
       const result = await service.getProfileReplies("user1", "user1");
 
       expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: tweet.id,
+        content: tweet.content,
+        likesCount: tweet._count.likes,
+      });
+    });
+
+    it("deve chamar findConversations com rootIds corretos", async () => {
+      mockProfileRepository.findUserRepliesIds = jest
+        .fn()
+        .mockResolvedValue([{ id: "reply1" }]);
+
+      jest.spyOn(service as any, "getRootId").mockResolvedValue("root1");
+
+      mockProfileRepository.findConversations = jest.fn().mockResolvedValue([]);
+
+      await service.getProfileReplies("user1", "user1");
+
+      expect(mockProfileRepository.findConversations).toHaveBeenCalledWith(
+        ["root1"],
+        "user1",
+      );
+      expect(service["getRootId"]).toHaveBeenCalledWith("reply1");
     });
 
     it("deve lançar erro se usuário não existir", async () => {
       mockUserRepository.buscarPorId.mockResolvedValue(null);
 
-      await expect(
-        service.getProfileReplies("user1", "user1"),
-      ).rejects.toMatchObject({
-        message: "Usuário não encontrado.",
-      });
+      await expect(service.getProfileReplies("user1", "user1")).rejects.toThrow(
+        "Usuário não encontrado.",
+      );
     });
 
-    it("deve mapear replies corretamente", async () => {
-      const tweet = makeTweet();
+    it("deve lidar com múltiplos roots", async () => {
+      mockProfileRepository.findUserRepliesIds = jest
+        .fn()
+        .mockResolvedValue([{ id: "r1" }, { id: "r2" }]);
 
-      mockProfileRepository.findProfileReplies.mockResolvedValue([
-        tweet,
-      ] as any);
+      jest
+        .spyOn(service as any, "getRootId")
+        .mockResolvedValueOnce("root1")
+        .mockResolvedValueOnce("root2");
+
+      mockProfileRepository.findConversations = jest.fn().mockResolvedValue([]);
+
+      await service.getProfileReplies("user1", "user1");
+
+      expect(mockProfileRepository.findConversations.mock.calls[0][0]).toEqual(
+        expect.arrayContaining(["root1", "root2"]),
+      );
+    });
+
+    it("deve retornar lista vazia se não houver replies", async () => {
+      mockProfileRepository.findUserRepliesIds = jest
+        .fn()
+        .mockResolvedValue([]);
+
+      mockProfileRepository.findConversations = jest.fn().mockResolvedValue([]);
 
       const result = await service.getProfileReplies("user1", "user1");
 
-      expect(result[0]).toMatchObject({
-        id: tweet.id,
-        content: tweet.content,
-        likesCount: tweet._count.likes,
-        repliesCount: tweet._count.replies,
-      });
+      expect(result).toEqual([]);
     });
 
-    it("deve chamar repository de replies corretamente", async () => {
-      mockProfileRepository.findProfileReplies.mockResolvedValue([
-        makeTweet(),
-      ] as any);
+    it("deve buscar replies, resolver roots e buscar conversas", async () => {
+      mockProfileRepository.findUserRepliesIds = jest
+        .fn()
+        .mockResolvedValue([{ id: "reply1" }]);
+
+      jest.spyOn(service as any, "getRootId").mockResolvedValue("root1");
+
+      mockProfileRepository.findConversations = jest.fn().mockResolvedValue([]);
 
       await service.getProfileReplies("user1", "loggedUser");
 
-      expect(mockProfileRepository.findProfileReplies).toHaveBeenCalledWith(
+      expect(mockProfileRepository.findUserRepliesIds).toHaveBeenCalledWith(
         "user1",
+      );
+      expect(mockProfileRepository.findConversations).toHaveBeenCalledWith(
+        ["root1"],
         "loggedUser",
       );
     });
@@ -182,43 +287,43 @@ describe("ProfileService", () => {
       expect(result).toHaveLength(1);
       expect(result[0].likedByMe).toBe(true);
     });
-  });
 
-  it("deve lançar erro se usuário não existir", async () => {
-    mockUserRepository.buscarPorId.mockResolvedValue(null);
+    it("deve lançar erro se usuário não existir", async () => {
+      mockUserRepository.buscarPorId.mockResolvedValue(null);
 
-    await expect(
-      service.getProfileLikes("user1", "user1"),
-    ).rejects.toMatchObject({
-      message: "Usuário não encontrado.",
+      await expect(
+        service.getProfileLikes("user1", "user1"),
+      ).rejects.toMatchObject({
+        message: "Usuário não encontrado.",
+      });
     });
-  });
 
-  it("deve chamar repository de likes corretamente", async () => {
-    mockProfileRepository.findProfileLikes.mockResolvedValue([
-      makeTweet(),
-    ] as any);
+    it("deve chamar repository de likes corretamente", async () => {
+      mockProfileRepository.findProfileLikes.mockResolvedValue([
+        makeTweet(),
+      ] as any);
 
-    await service.getProfileLikes("user1", "loggedUser");
+      await service.getProfileLikes("user1", "loggedUser");
 
-    expect(mockProfileRepository.findProfileLikes).toHaveBeenCalledWith(
-      "user1",
-      "loggedUser",
-    );
-  });
+      expect(mockProfileRepository.findProfileLikes).toHaveBeenCalledWith(
+        "user1",
+        "loggedUser",
+      );
+    });
 
-  it("deve mapear likes corretamente", async () => {
-    const tweet = makeTweet();
+    it("deve mapear likes corretamente", async () => {
+      const tweet = makeTweet();
 
-    mockProfileRepository.findProfileLikes.mockResolvedValue([tweet] as any);
+      mockProfileRepository.findProfileLikes.mockResolvedValue([tweet] as any);
 
-    const result = await service.getProfileLikes("user1", "user1");
+      const result = await service.getProfileLikes("user1", "user1");
 
-    expect(result[0]).toMatchObject({
-      id: tweet.id,
-      likesCount: tweet._count.likes,
-      repliesCount: tweet._count.replies,
-      likedByMe: true,
+      expect(result[0]).toMatchObject({
+        id: tweet.id,
+        likesCount: tweet._count.likes,
+        repliesCount: tweet._count.replies,
+        likedByMe: true,
+      });
     });
   });
 });
