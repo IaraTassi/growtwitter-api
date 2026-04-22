@@ -8,7 +8,6 @@ import {
   criarTweet,
   criarUsuario,
   login,
-  registrar,
 } from "../support/api";
 
 describe("Profile - E2E", () => {
@@ -18,6 +17,7 @@ describe("Profile - E2E", () => {
   let tweetId = "";
   let replyId = "";
   let likedTweetId = "";
+  let otherUserToken = "";
 
   const NON_EXISTENT_ID = crypto.randomUUID();
 
@@ -61,20 +61,46 @@ describe("Profile - E2E", () => {
         likedTweetId = res.body.tweet.id;
 
         return adicionarLike(token, likedTweetId);
+      })
+      .then(() => {
+        const unique = Date.now();
+
+        return criarUsuario({
+          ...users.validUser2,
+          email: `other_${unique}@test.com`,
+          userName: `other_${unique}`,
+        });
+      })
+      .then((res) => {
+        const otherEmail = res.body.user.email;
+
+        return login(otherEmail, users.validUser2.password);
+      })
+      .then((res) => {
+        otherUserToken = res.body.token;
+
+        return criarReply(otherUserToken, tweetId, {
+          content: "reply other user",
+        });
       });
   });
 
   describe("GET /api/profile/:userId/tweets - getProfileTweets", () => {
-    it("deve buscar tweets do perfil com sucesso", () => {
+    it("deve buscar tweets do perfil", () => {
       getProfileTweets(userId, token).then((res) => {
         expect(res.status).to.eq(200);
         expect(res.body.tweets).to.be.an("array");
-        expect(res.body.tweets.length).to.be.greaterThan(0);
 
-        expect(res.body.tweets[0]).to.have.property("content");
-        expect(res.body.tweets[0]).to.have.property("likesCount");
-        expect(res.body.tweets[0]).to.have.property("repliesCount");
-        expect(res.body.tweets[0]).to.have.property("likedByMe");
+        const tweets = res.body.tweets as any[];
+
+        expect(tweets.length).to.be.greaterThan(0);
+
+        expect(tweets[0]).to.include.keys(
+          "content",
+          "likesCount",
+          "repliesCount",
+          "likedByMe",
+        );
       });
     });
 
@@ -84,7 +110,7 @@ describe("Profile - E2E", () => {
       });
     });
 
-    it("deve retornar array vazio para usuário sem tweets", () => {
+    it("deve retornar vazio para usuário sem tweets", () => {
       criarUsuario({
         ...users.validUser2,
         email: `empty_${Date.now()}@test.com`,
@@ -101,23 +127,65 @@ describe("Profile - E2E", () => {
   });
 
   describe("GET /api/profile/:userId/replies - getProfileReplies", () => {
-    it("deve buscar replies do perfil com sucesso", () => {
+    it("deve retornar conversa completa (root + replies)", () => {
       getProfileReplies(userId, token).then((res) => {
         expect(res.status).to.eq(200);
-        expect(res.body.replies).to.be.an("array");
-        expect(res.body.replies.length).to.be.greaterThan(0);
 
-        expect(res.body.replies[0]).to.have.property("content", "reply test");
-        expect(res.body.replies[0]).to.have.property("parent");
+        const contents = (res.body.replies as any[]).map((r: any) => r.content);
+
+        expect(contents).to.include("tweet test");
+        expect(contents).to.include("reply test");
+        expect(contents).to.include("reply other user");
       });
     });
 
-    it("deve garantir que reply tem parent válido", () => {
+    it("deve garantir parent correto", () => {
       getProfileReplies(userId, token).then((res) => {
-        const reply = res.body.replies[0];
+        const reply = (res.body.replies as any[]).find(
+          (r: any) => r.content === "reply test",
+        );
 
+        expect(reply).to.exist;
         expect(reply.parent).to.exist;
         expect(reply.parent.id).to.eq(tweetId);
+      });
+    });
+
+    it("deve trazer replies de outros usuários na mesma conversa", () => {
+      getProfileReplies(userId, token).then((res) => {
+        const contents = (res.body.replies as any[]).map((r: any) => r.content);
+
+        expect(contents).to.include("reply other user");
+      });
+    });
+
+    it("deve retornar em ordem cronológica", () => {
+      getProfileReplies(userId, token).then((res) => {
+        const replies = res.body.replies;
+
+        for (let i = 1; i < replies.length; i++) {
+          const prev = new Date(replies[i - 1].createdAt);
+          const curr = new Date(replies[i].createdAt);
+
+          expect(prev.getTime()).to.be.at.most(curr.getTime());
+        }
+      });
+    });
+
+    it("deve retornar vazio se usuário não tiver replies", () => {
+      const unique = Date.now();
+
+      criarUsuario({
+        ...users.validUser1,
+        email: `empty_${unique}@test.com`,
+        userName: `empty_${unique}`,
+      }).then((res) => {
+        const newUserId = res.body.user.id;
+
+        getProfileReplies(newUserId, token).then((res) => {
+          expect(res.status).to.eq(200);
+          expect(res.body.replies).to.deep.equal([]);
+        });
       });
     });
 
@@ -129,20 +197,26 @@ describe("Profile - E2E", () => {
   });
 
   describe("GET /api/profile/:userId/likes - getProfileLikes", () => {
-    it("deve buscar likes do perfil com sucesso", () => {
+    it("deve retornar likes do usuário", () => {
       getProfileLikes(userId, token).then((res) => {
         expect(res.status).to.eq(200);
-        expect(res.body.likes).to.be.an("array");
-        expect(res.body.likes.length).to.be.greaterThan(0);
 
-        expect(res.body.likes[0]).to.have.property("content", "liked tweet");
-        expect(res.body.likes[0]).to.have.property("likedByMe", true);
+        const likes = res.body.likes as any[];
+
+        expect(likes).to.be.an("array");
+        expect(likes.length).to.be.greaterThan(0);
+
+        const contents = likes.map((l: any) => l.content);
+
+        expect(contents).to.include("liked tweet");
       });
     });
 
-    it("deve retornar likedByMe como boolean", () => {
+    it("deve retornar likedByMe true", () => {
       getProfileLikes(userId, token).then((res) => {
-        expect(res.body.likes[0].likedByMe).to.be.a("boolean");
+        const likes = res.body.likes as any[];
+
+        expect(likes.some((l: any) => l.likedByMe === true)).to.eq(true);
       });
     });
 
