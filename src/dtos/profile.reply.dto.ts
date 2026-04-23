@@ -4,6 +4,7 @@ export interface ProfileReplyThreadDto {
   createdAt: Date;
 
   user: {
+    id: string;
     name: string;
     userName: string;
     imageUrl?: string;

@@ -4,12 +4,13 @@ export function mapTweetToThreadDto(node: any): ProfileReplyThreadDto {
   return {
     id: node.id,
     content: node.content,
-    createdAt: node.createdAt,
+    createdAt: new Date(node.createdAt),
     user: {
+      id: node.user.id,
       name: node.user.name,
       userName: node.user.userName,
       imageUrl: node.user.imageUrl,
     },
-    replies: node.replies.map((r: any) => mapTweetToThreadDto(r)),
+    replies: (node.replies ?? []).map((r: any) => mapTweetToThreadDto(r)),
   };
 }

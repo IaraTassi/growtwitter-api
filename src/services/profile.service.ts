@@ -97,12 +97,11 @@ export class ProfileService {
 
     if (!participations.length) return [];
 
-    const rootIds = new Set<string>();
-
-    for (const tweet of participations) {
-      const rootId = await this.findRoot(tweet.id);
-      rootIds.add(rootId);
-    }
+    const rootIds = new Set<string>(
+      (
+        await Promise.all(participations.map((t) => this.findRoot(t.id)))
+      ).filter(Boolean) as string[],
+    );
 
     const allTweets = await this.profileRepository.findAllTweetsBasic();
 
