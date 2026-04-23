@@ -54,6 +54,7 @@ export class ProfileRepository {
       include: {
         user: {
           select: {
+            id: true,
             name: true,
             userName: true,
             imageUrl: true,
