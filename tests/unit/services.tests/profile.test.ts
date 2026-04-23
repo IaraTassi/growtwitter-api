@@ -54,11 +54,10 @@ describe("ProfileService", () => {
   beforeEach(() => {
     mockProfileRepository = {
       findProfileTweets: jest.fn(),
-      findProfileReplies: jest.fn(),
       findProfileLikes: jest.fn(),
-      findTweetById: jest.fn(),
-      findUserRepliesIds: jest.fn(),
-      findConversations: jest.fn(),
+      findById: jest.fn(),
+      findUserParticipations: jest.fn(),
+      findAllTweetsBasic: jest.fn(),
     } as any;
 
     mockUserRepository = {
@@ -134,145 +133,145 @@ describe("ProfileService", () => {
     });
   });
 
-  describe("ProfileService - getRootId", () => {
-    it("deve subir até o root corretamente", async () => {
-      const serviceAny = service as any;
-
-      jest
-        .spyOn(mockProfileRepository, "findTweetById")
-        .mockResolvedValueOnce({ id: "3", parentId: "2" } as any)
-        .mockResolvedValueOnce({ id: "2", parentId: "1" } as any)
-        .mockResolvedValueOnce({ id: "1", parentId: null } as any);
-
-      const rootId = await serviceAny.getRootId("3");
-
-      expect(rootId).toBe("1");
-    });
-
-    it("deve retornar o próprio id se já for root", async () => {
-      const serviceAny = service as any;
-
-      jest
-        .spyOn(mockProfileRepository, "findTweetById")
-        .mockResolvedValueOnce({ id: "1", parentId: null } as any);
-
-      const rootId = await serviceAny.getRootId("1");
-
-      expect(rootId).toBe("1");
-    });
-
-    it("deve retornar null se tweet não existir", async () => {
-      const serviceAny = service as any;
-
-      jest
-        .spyOn(mockProfileRepository, "findTweetById")
-        .mockResolvedValueOnce(null);
-
-      const rootId = await serviceAny.getRootId("999");
-
-      expect(rootId).toBeNull();
-    });
-  });
-
   describe("ProfileService - getProfileReplies", () => {
-    it("deve retornar lista de tweets da conversa", async () => {
-      mockProfileRepository.findUserRepliesIds = jest
-        .fn()
-        .mockResolvedValue([{ id: "reply1" }]);
+    it("deve retornar threads em árvore corretamente", async () => {
+      mockProfileRepository.findUserParticipations.mockResolvedValue([
+        { id: "2", parentId: "1" },
+      ]);
 
-      jest.spyOn(service as any, "getRootId").mockResolvedValue("root1");
+      mockProfileRepository.findById
+        .mockResolvedValueOnce({ id: "2", parentId: "1" })
+        .mockResolvedValueOnce({ id: "1", parentId: null });
 
-      const tweet = makeTweet();
+      mockProfileRepository.findAllTweetsBasic.mockResolvedValue([
+        {
+          id: "1",
+          content: "root",
+          createdAt: new Date("2026-01-01"),
+          parentId: null,
+          user: { name: "A", userName: "a", imageUrl: null },
+        },
+        {
+          id: "2",
+          content: "reply",
+          createdAt: new Date("2026-01-02"),
+          parentId: "1",
+          user: { name: "B", userName: "b", imageUrl: null },
+        },
+      ] as any);
 
-      mockProfileRepository.findConversations = jest
-        .fn()
-        .mockResolvedValue([tweet] as any);
+      const result = await service.getProfileReplies("user1");
 
-      const result = await service.getProfileReplies("user1", "user1");
+      const root = result.find((r) => r.id === "1");
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
-        id: tweet.id,
-        content: tweet.content,
-        likesCount: tweet._count.likes,
-      });
+      expect(root).toBeDefined();
+      expect(root!.replies).toHaveLength(1);
+
+      const reply = root!.replies.find((r) => r.id === "2");
+
+      expect(reply).toBeDefined();
+      expect(reply!.content).toBe("reply");
     });
 
-    it("deve chamar findConversations com rootIds corretos", async () => {
-      mockProfileRepository.findUserRepliesIds = jest
-        .fn()
-        .mockResolvedValue([{ id: "reply1" }]);
+    it("deve retornar vazio se usuário não participou", async () => {
+      mockProfileRepository.findUserParticipations.mockResolvedValue([]);
 
-      jest.spyOn(service as any, "getRootId").mockResolvedValue("root1");
+      const result = await service.getProfileReplies("user1");
 
-      mockProfileRepository.findConversations = jest.fn().mockResolvedValue([]);
-
-      await service.getProfileReplies("user1", "user1");
-
-      expect(mockProfileRepository.findConversations).toHaveBeenCalledWith(
-        ["root1"],
-        "user1",
-      );
-      expect(service["getRootId"]).toHaveBeenCalledWith("reply1");
+      expect(result).toEqual([]);
     });
 
     it("deve lançar erro se usuário não existir", async () => {
       mockUserRepository.buscarPorId.mockResolvedValue(null);
 
-      await expect(service.getProfileReplies("user1", "user1")).rejects.toThrow(
+      await expect(service.getProfileReplies("user1")).rejects.toThrow(
         "Usuário não encontrado.",
       );
     });
 
-    it("deve lidar com múltiplos roots", async () => {
-      mockProfileRepository.findUserRepliesIds = jest
-        .fn()
-        .mockResolvedValue([{ id: "r1" }, { id: "r2" }]);
+    it("deve montar árvore com múltiplos níveis", async () => {
+      mockProfileRepository.findUserParticipations.mockResolvedValue([
+        { id: "3", parentId: "2" },
+      ]);
 
-      jest
-        .spyOn(service as any, "getRootId")
-        .mockResolvedValueOnce("root1")
-        .mockResolvedValueOnce("root2");
+      mockProfileRepository.findById
+        .mockResolvedValueOnce({ id: "3", parentId: "2" })
+        .mockResolvedValueOnce({ id: "2", parentId: "1" })
+        .mockResolvedValueOnce({ id: "1", parentId: null });
 
-      mockProfileRepository.findConversations = jest.fn().mockResolvedValue([]);
+      mockProfileRepository.findAllTweetsBasic.mockResolvedValue([
+        {
+          id: "1",
+          content: "root",
+          createdAt: new Date("2026-01-01"),
+          parentId: null,
+          user: { name: "A", userName: "a", imageUrl: null },
+        },
+        {
+          id: "2",
+          content: "level 1",
+          createdAt: new Date("2026-01-02"),
+          parentId: "1",
+          user: { name: "B", userName: "b", imageUrl: null },
+        },
+        {
+          id: "3",
+          content: "level 2",
+          createdAt: new Date("2026-01-03"),
+          parentId: "2",
+          user: { name: "C", userName: "c", imageUrl: null },
+        },
+      ] as any);
 
-      await service.getProfileReplies("user1", "user1");
+      const result = await service.getProfileReplies("user1");
 
-      expect(mockProfileRepository.findConversations.mock.calls[0][0]).toEqual(
-        expect.arrayContaining(["root1", "root2"]),
-      );
+      const root = result.find((r) => r.id === "1");
+      const level1 = root?.replies.find((r) => r.id === "2");
+      const level2 = level1?.replies.find((r) => r.id === "3");
+
+      expect(level2?.content).toBe("level 2");
     });
 
-    it("deve retornar lista vazia se não houver replies", async () => {
-      mockProfileRepository.findUserRepliesIds = jest
-        .fn()
-        .mockResolvedValue([]);
+    it("deve ordenar replies corretamente por data", async () => {
+      mockProfileRepository.findUserParticipations.mockResolvedValue([
+        { id: "2", parentId: "1" },
+      ]);
 
-      mockProfileRepository.findConversations = jest.fn().mockResolvedValue([]);
+      mockProfileRepository.findById
+        .mockResolvedValueOnce({ id: "2", parentId: "1" })
+        .mockResolvedValueOnce({ id: "1", parentId: null });
 
-      const result = await service.getProfileReplies("user1", "user1");
+      mockProfileRepository.findAllTweetsBasic.mockResolvedValue([
+        {
+          id: "1",
+          content: "root",
+          createdAt: new Date("2026-01-01"),
+          parentId: null,
+          user: { name: "A", userName: "a", imageUrl: null },
+        },
+        {
+          id: "3",
+          content: "reply mais novo",
+          createdAt: new Date("2026-01-03"),
+          parentId: "1",
+          user: { name: "B", userName: "b", imageUrl: null },
+        },
+        {
+          id: "2",
+          content: "reply mais antigo",
+          createdAt: new Date("2026-01-02"),
+          parentId: "1",
+          user: { name: "C", userName: "c", imageUrl: null },
+        },
+      ] as any);
 
-      expect(result).toEqual([]);
-    });
+      const result = await service.getProfileReplies("user1");
 
-    it("deve buscar replies, resolver roots e buscar conversas", async () => {
-      mockProfileRepository.findUserRepliesIds = jest
-        .fn()
-        .mockResolvedValue([{ id: "reply1" }]);
+      const root = result.find((r) => r.id === "1");
 
-      jest.spyOn(service as any, "getRootId").mockResolvedValue("root1");
+      const contents = root!.replies.map((r) => r.content);
 
-      mockProfileRepository.findConversations = jest.fn().mockResolvedValue([]);
-
-      await service.getProfileReplies("user1", "loggedUser");
-
-      expect(mockProfileRepository.findUserRepliesIds).toHaveBeenCalledWith(
-        "user1",
-      );
-      expect(mockProfileRepository.findConversations).toHaveBeenCalledWith(
-        ["root1"],
-        "loggedUser",
-      );
+      expect(contents).toEqual(["reply mais antigo", "reply mais novo"]);
     });
   });
 

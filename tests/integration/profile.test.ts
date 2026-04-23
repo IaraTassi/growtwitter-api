@@ -169,32 +169,65 @@ describe("ProfileController - Testes de Integração", () => {
   });
 
   describe("GET /api/profile/:userId/replies - getProfileReplies", () => {
-    it("deve retornar root e replies da conversa", async () => {
+    it("deve retornar conversa em formato de árvore", async () => {
       const res = await request(app)
         .get(`${baseUrl}/${userId}/replies`)
         .set("Authorization", `Bearer ${token}`);
 
       expect(res.status).toBe(200);
 
-      const contents = res.body.replies.map((r: any) => r.content);
+      const root = res.body.replies.find((t: any) => t.id === tweetId);
 
-      expect(contents).toContain("tweet test");
-      expect(contents).toContain("reply test");
+      expect(root).toBeDefined();
+      expect(root.content).toBe("tweet test");
+
+      const reply = root.replies.find((r: any) => r.id === replyId);
+
+      expect(reply).toBeDefined();
+      expect(reply.content).toBe("reply test");
     });
 
-    it("deve retornar em ordem cronológica", async () => {
+    it("deve manter estrutura hierárquica correta", async () => {
+      const replyLevel2 = await prisma.tweet.create({
+        data: {
+          content: "reply level 2",
+          userId,
+          parentId: replyId,
+        },
+      });
+
       const res = await request(app)
         .get(`${baseUrl}/${userId}/replies`)
         .set("Authorization", `Bearer ${token}`);
 
-      const replies = res.body.replies;
+      const root = res.body.replies.find((t: any) => t.id === tweetId);
+      const level1 = root.replies.find((r: any) => r.id === replyId);
+      const level2 = level1.replies.find((r: any) => r.id === replyLevel2.id);
 
-      for (let i = 1; i < replies.length; i++) {
-        const prev = new Date(replies[i - 1].createdAt);
-        const curr = new Date(replies[i].createdAt);
+      expect(level2).toBeDefined();
+      expect(level2.content).toBe("reply level 2");
+    });
 
-        expect(prev.getTime()).toBeLessThanOrEqual(curr.getTime());
+    it("deve ordenar replies cronologicamente dentro da árvore", async () => {
+      function isSortedAsc(replies: any[]): boolean {
+        for (let i = 1; i < replies.length; i++) {
+          const prev = new Date(replies[i - 1].createdAt).getTime();
+          const curr = new Date(replies[i].createdAt).getTime();
+
+          if (prev > curr) return false;
+
+          if (!isSortedAsc(replies[i].replies)) return false;
+        }
+        return true;
       }
+
+      const res = await request(app)
+        .get(`${baseUrl}/${userId}/replies`)
+        .set("Authorization", `Bearer ${token}`);
+
+      res.body.replies.forEach((thread: any) => {
+        expect(isSortedAsc(thread.replies)).toBe(true);
+      });
     });
 
     it("deve trazer respostas de outros usuários na mesma conversa", async () => {
@@ -210,22 +243,11 @@ describe("ProfileController - Testes de Integração", () => {
         .get(`${baseUrl}/${userId}/replies`)
         .set("Authorization", `Bearer ${token}`);
 
-      const contents = res.body.replies.map((r: any) => r.content);
+      const root = res.body.replies.find((t: any) => t.id === tweetId);
+
+      const contents = root.replies.map((r: any) => r.content);
 
       expect(contents).toContain("reply other user");
-    });
-
-    it("deve manter referência de parent corretamente", async () => {
-      const res = await request(app)
-        .get(`${baseUrl}/${userId}/replies`)
-        .set("Authorization", `Bearer ${token}`);
-
-      const reply = res.body.replies.find(
-        (r: any) => r.content === "reply test",
-      );
-
-      expect(reply.parent).toBeDefined();
-      expect(reply.parent.id).toBe(tweetId);
     });
 
     it("deve retornar vazio se usuário não tiver replies", async () => {
@@ -246,19 +268,6 @@ describe("ProfileController - Testes de Integração", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.replies).toEqual([]);
-    });
-
-    it("deve garantir parent válido na reply", async () => {
-      const res = await request(app)
-        .get(`${baseUrl}/${userId}/replies`)
-        .set("Authorization", `Bearer ${token}`);
-
-      const reply = res.body.replies.find(
-        (r: any) => r.content === "reply test",
-      );
-
-      expect(reply.parent).toBeDefined();
-      expect(reply.parent.id).toBe(tweetId);
     });
   });
 

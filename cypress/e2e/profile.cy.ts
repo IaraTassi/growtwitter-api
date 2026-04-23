@@ -13,13 +13,22 @@ import {
 describe("Profile - E2E", () => {
   let token = "";
   let userId = "";
-
   let tweetId = "";
   let replyId = "";
   let likedTweetId = "";
   let otherUserToken = "";
 
   const NON_EXISTENT_ID = crypto.randomUUID();
+
+  function collectContents(node: any): string[] {
+    let result = [node.content];
+
+    for (const reply of node.replies || []) {
+      result = result.concat(collectContents(reply));
+    }
+
+    return result;
+  }
 
   before(() => {
     const unique = Date.now();
@@ -127,52 +136,66 @@ describe("Profile - E2E", () => {
   });
 
   describe("GET /api/profile/:userId/replies - getProfileReplies", () => {
-    it("deve retornar conversa completa (root + replies)", () => {
+    it("deve retornar conversa em formato de árvore", () => {
       getProfileReplies(userId, token).then((res) => {
         expect(res.status).to.eq(200);
 
-        const contents = (res.body.replies as any[]).map((r: any) => r.content);
+        const root = res.body.replies.find((t: any) => t.id === tweetId);
 
-        expect(contents).to.include("tweet test");
-        expect(contents).to.include("reply test");
-        expect(contents).to.include("reply other user");
+        expect(root).to.exist;
+        expect(root.content).to.eq("tweet test");
+        expect(root.replies.length).to.be.greaterThan(0);
       });
     });
 
-    it("deve garantir parent correto", () => {
+    it("deve manter hierarquia correta", () => {
       getProfileReplies(userId, token).then((res) => {
-        const reply = (res.body.replies as any[]).find(
-          (r: any) => r.content === "reply test",
-        );
+        const root = res.body.replies.find((t: any) => t.id === tweetId);
+
+        expect(root).to.exist;
+
+        const reply = root.replies.find((r: any) => r.id === replyId);
 
         expect(reply).to.exist;
-        expect(reply.parent).to.exist;
-        expect(reply.parent.id).to.eq(tweetId);
       });
     });
 
-    it("deve trazer replies de outros usuários na mesma conversa", () => {
+    it("deve incluir replies do próprio usuário e de outros usuários", () => {
       getProfileReplies(userId, token).then((res) => {
-        const contents = (res.body.replies as any[]).map((r: any) => r.content);
+        let allContents: string[] = [];
 
-        expect(contents).to.include("reply other user");
+        res.body.replies.forEach((t: any) => {
+          allContents = allContents.concat(collectContents(t));
+        });
+
+        expect(allContents).to.include.members([
+          "reply test",
+          "reply other user",
+        ]);
       });
     });
 
-    it("deve retornar em ordem cronológica", () => {
-      getProfileReplies(userId, token).then((res) => {
-        const replies = res.body.replies;
-
+    it("deve ordenar replies cronologicamente dentro da árvore", () => {
+      function isSortedAsc(replies: any[]): boolean {
         for (let i = 1; i < replies.length; i++) {
-          const prev = new Date(replies[i - 1].createdAt);
-          const curr = new Date(replies[i].createdAt);
+          const prev = new Date(replies[i - 1].createdAt).getTime();
+          const curr = new Date(replies[i].createdAt).getTime();
 
-          expect(prev.getTime()).to.be.at.most(curr.getTime());
+          if (prev > curr) return false;
+
+          if (!isSortedAsc(replies[i].replies)) return false;
         }
+        return true;
+      }
+
+      getProfileReplies(userId, token).then((res) => {
+        res.body.replies.forEach((thread: any) => {
+          expect(isSortedAsc(thread.replies)).to.eq(true);
+        });
       });
     });
 
-    it("deve retornar vazio se usuário não tiver replies", () => {
+    it("deve retornar vazio se usuário não participou de nenhuma conversa", () => {
       const unique = Date.now();
 
       criarUsuario({
