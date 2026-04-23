@@ -29,84 +29,39 @@ export class ProfileRepository {
     });
   }
 
-  async findTweetById(tweetId: string) {
+  async findById(id: string) {
     return prisma.tweet.findUnique({
-      where: { id: tweetId },
-      select: { id: true, parentId: true },
-    });
-  }
-
-  async findUserRepliesIds(userId: string) {
-    return prisma.tweet.findMany({
-      where: {
-        userId,
-        parentId: { not: null },
-      },
+      where: { id },
       select: {
         id: true,
+        parentId: true,
       },
     });
   }
 
-  async findConversations(rootIds: string[], loggedUserId: string) {
+  async findUserParticipations(userId: string) {
     return prisma.tweet.findMany({
-      where: {
-        OR: [
-          { id: { in: rootIds } },
-          { parentId: { in: rootIds } },
-          {
-            parent: {
-              parentId: { in: rootIds },
-            },
-          },
-        ],
+      where: { userId },
+      select: {
+        id: true,
+        parentId: true,
       },
+    });
+  }
+
+  async findAllTweetsBasic() {
+    return prisma.tweet.findMany({
       include: {
-        user: true,
-        parent: {
-          include: { user: true },
-        },
-        _count: {
+        user: {
           select: {
-            likes: true,
-            replies: true,
+            name: true,
+            userName: true,
+            imageUrl: true,
           },
-        },
-        likes: {
-          where: { userId: loggedUserId },
-          select: { userId: true },
         },
       },
       orderBy: {
         createdAt: "asc",
-      },
-    });
-  }
-
-  async findProfileReplies(userId: string, loggedUserId: string) {
-    return prisma.tweet.findMany({
-      where: {
-        userId,
-        parentId: { not: null },
-      },
-      include: {
-        user: true,
-        parent: {
-          include: { user: true },
-        },
-        _count: {
-          select: {
-            likes: true,
-            replies: true,
-          },
-        },
-        likes: {
-          where: { userId: loggedUserId },
-          select: { userId: true },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
       },
     });
   }

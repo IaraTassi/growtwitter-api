@@ -25,10 +25,7 @@ export class ProfileController {
     try {
       const { userId } = req.params;
 
-      const replies = await profileService.getProfileReplies(
-        userId,
-        req.userId!,
-      );
+      const replies = await profileService.getProfileReplies(userId);
 
       return res.status(200).json({
         ok: true,
