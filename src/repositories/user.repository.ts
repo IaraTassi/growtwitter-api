@@ -48,6 +48,13 @@ export class UserRepository {
         followers: true,
         following: true,
         likes: true,
+        _count: {
+          select: {
+            tweets: true,
+            followers: true,
+            following: true,
+          },
+        },
       },
     });
 

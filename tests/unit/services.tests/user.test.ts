@@ -227,6 +227,22 @@ describe("UserService - Testes Unitários", () => {
 
       expect(result).not.toHaveProperty("password");
     });
+
+    it("deve retornar contadores corretamente", async () => {
+      mockRepository.buscarPorId.mockResolvedValue({
+        id: "1",
+        ...validDto,
+        tweetsCount: 5,
+        followersCount: 3,
+        followingCount: 2,
+      } as any);
+
+      const result = await service.buscarPorId("1");
+
+      expect(result.tweetsCount).toBe(5);
+      expect(result.followersCount).toBe(3);
+      expect(result.followingCount).toBe(2);
+    });
   });
 
   describe("UserService - login", () => {

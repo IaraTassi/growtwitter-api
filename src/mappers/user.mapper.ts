@@ -14,6 +14,11 @@ type UsuarioComRelacoes = PrismaUser & {
   likes?: PrismaLike[];
   followers?: PrismaFollow[];
   following?: PrismaFollow[];
+  _count?: {
+    tweets: number;
+    followers: number;
+    following: number;
+  };
 };
 
 export function mapUser(user: UsuarioComRelacoes, shallow = false): User {
@@ -35,5 +40,9 @@ export function mapUser(user: UsuarioComRelacoes, shallow = false): User {
     following: shallow
       ? undefined
       : user.following?.map((f) => mapFollow(f, true)),
+
+    tweetsCount: user._count?.tweets ?? 0,
+    followersCount: user._count?.followers ?? 0,
+    followingCount: user._count?.following ?? 0,
   };
 }

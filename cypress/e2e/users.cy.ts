@@ -265,6 +265,14 @@ describe("Usuários - E2E", () => {
         expect(res.body.user).to.not.have.property("password");
       });
     });
+
+    it("Deve retornar contadores no usuário", () => {
+      buscarPorIdUsuario(token, userId).then((res) => {
+        expect(res.body.user).to.have.property("tweetsCount");
+        expect(res.body.user).to.have.property("followersCount");
+        expect(res.body.user).to.have.property("followingCount");
+      });
+    });
   });
 
   describe("DELETE /api/users/:userId - removerUsuario", () => {
