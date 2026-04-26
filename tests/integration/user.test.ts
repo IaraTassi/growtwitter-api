@@ -279,6 +279,9 @@ describe("UserController - Testes de Integração", () => {
 
       expect(res.status).toBe(200);
 
+      expect(res.body.user.tweetsCount).toBeDefined();
+      expect(res.body.user.followersCount).toBeDefined();
+      expect(res.body.user.followingCount).toBeDefined();
       expect(res.body.user).toHaveProperty("tweetsCount");
       expect(res.body.user).toHaveProperty("followersCount");
       expect(res.body.user).toHaveProperty("followingCount");
