@@ -15,6 +15,10 @@ export interface User {
   followers?: Follow[];
   following?: Follow[];
 
+  tweetsCount: number;
+  followersCount: number;
+  followingCount: number;
+
   createdAt: Date;
   updatedAt: Date;
 }

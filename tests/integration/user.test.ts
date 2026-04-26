@@ -92,7 +92,7 @@ describe("UserController - Testes de Integração", () => {
       expect(res.status).toBe(400);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe(
-        "A senha é obrigatória e deve ter pelo menos 6 caracteres."
+        "A senha é obrigatória e deve ter pelo menos 6 caracteres.",
       );
     });
 
@@ -137,7 +137,7 @@ describe("UserController - Testes de Integração", () => {
       expect(res.status).toBe(400);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe(
-        "A senha é obrigatória e deve ter pelo menos 6 caracteres."
+        "A senha é obrigatória e deve ter pelo menos 6 caracteres.",
       );
     });
 
@@ -258,7 +258,7 @@ describe("UserController - Testes de Integração", () => {
       expect(res.status).toBe(401);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe(
-        "Token de autenticação não fornecido ou inválido."
+        "Token de autenticação não fornecido ou inválido.",
       );
     });
 
@@ -270,6 +270,20 @@ describe("UserController - Testes de Integração", () => {
       expect(res.status).toBe(401);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe("Token inválido ou expirado.");
+    });
+
+    it("deve retornar contadores no payload", async () => {
+      const res = await request(app)
+        .get(`${baseUrl}/${userId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+
+      expect(res.body.user).toHaveProperty("tweetsCount");
+      expect(res.body.user).toHaveProperty("followersCount");
+      expect(res.body.user).toHaveProperty("followingCount");
+
+      expect(typeof res.body.user.tweetsCount).toBe("number");
     });
   });
 
@@ -430,7 +444,7 @@ describe("UserController - Testes de Integração", () => {
       expect(res.status).toBe(401);
       expect(res.body.ok).toBe(false);
       expect(res.body.message).toBe(
-        "Token de autenticação não fornecido ou inválido."
+        "Token de autenticação não fornecido ou inválido.",
       );
     });
 
