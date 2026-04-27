@@ -243,6 +243,21 @@ describe("UserService - Testes Unitários", () => {
       expect(result.followersCount).toBe(3);
       expect(result.followingCount).toBe(2);
     });
+
+    it("deve retornar apenas contagem de tweets pai (vinda do repository)", async () => {
+      mockRepository.buscarPorId.mockResolvedValue({
+        id: "1",
+        ...validDto,
+        tweetsCount: 1,
+        followersCount: 0,
+        followingCount: 0,
+      } as any);
+
+      const result = await service.buscarPorId("1");
+
+      expect(result.tweetsCount).toBe(1);
+      expect(mockRepository.buscarPorId).toHaveBeenCalledWith("1");
+    });
   });
 
   describe("UserService - login", () => {
