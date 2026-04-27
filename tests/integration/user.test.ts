@@ -288,6 +288,55 @@ describe("UserController - Testes de Integração", () => {
 
       expect(typeof res.body.user.tweetsCount).toBe("number");
     });
+
+    it("deve contar apenas tweets pai (ignorar replies)", async () => {
+      const parent = await prisma.tweet.create({
+        data: {
+          content: "tweet pai",
+          userId,
+        },
+      });
+
+      await prisma.tweet.create({
+        data: {
+          content: "reply",
+          userId,
+          parentId: parent.id,
+        },
+      });
+
+      const res = await request(app)
+        .get(`${baseUrl}/${userId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+
+      expect(res.body.user.tweetsCount).toBe(1);
+    });
+
+    it("deve contar múltiplos tweets pai ignorando múltiplas replies", async () => {
+      const parent1 = await prisma.tweet.create({
+        data: { content: "pai 1", userId },
+      });
+
+      const parent2 = await prisma.tweet.create({
+        data: { content: "pai 2", userId },
+      });
+
+      await prisma.tweet.create({
+        data: { content: "reply 1", userId, parentId: parent1.id },
+      });
+
+      await prisma.tweet.create({
+        data: { content: "reply 2", userId, parentId: parent2.id },
+      });
+
+      const res = await request(app)
+        .get(`${baseUrl}/${userId}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(res.body.user.tweetsCount).toBe(2);
+    });
   });
 
   describe("GET /api/users - listarUsuarios", () => {

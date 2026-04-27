@@ -34,7 +34,11 @@ export class UserRepository {
         likes: true,
         _count: {
           select: {
-            tweets: true,
+            tweets: {
+              where: {
+                parentId: null,
+              },
+            },
             followers: true,
             following: true,
           },

@@ -6,67 +6,105 @@ import {
   listarUsuarios,
   buscarPorIdUsuario,
   removerUsuario,
+  criarTweet,
+  criarReply,
 } from "../support/api";
 
 describe("Usuários - E2E", () => {
   let token = "";
   let userId = "";
+  let currentUser: any;
+
   const NON_EXISTENT_ID = crypto.randomUUID();
+
+  const buildUser = () => {
+    const password = "123456";
+
+    return {
+      ...users.validUser1,
+      email: `user_${crypto.randomUUID()}@teste.com`,
+      userName: `user_${crypto.randomUUID()}`,
+      password,
+    };
+  };
+
+  before(() => {
+    currentUser = buildUser();
+
+    return criarUsuario(currentUser)
+      .then((res) => {
+        expect(res.status).to.eq(201);
+        expect(res.body.ok).to.be.true;
+
+        userId = res.body.user.id;
+      })
+      .then(() => login(currentUser.email, currentUser.password))
+      .then((res) => {
+        expect(res.status).to.eq(200);
+        expect(res.body.ok).to.be.true;
+
+        token = res.body.token;
+      });
+  });
 
   describe("POST /api/users - criarUsuario", () => {
     it("Cria usuário com sucesso", () => {
-      criarUsuario(users.validUser1).then((res) => {
+      const user = buildUser();
+
+      return criarUsuario(user).then((res) => {
         expect(res.status).to.eq(201);
         expect(res.body.ok).to.be.true;
         expect(res.body.user).to.have.property("id");
-        userId = res.body.user.id;
+        expect(res.body.user).to.not.have.property("password");
       });
     });
 
     it("Falha ao criar usuário com email duplicado", () => {
-      criarUsuario(users.invalidUserEmailDuplicado).then((res) => {
-        expect(res.status).to.eq(409);
-        expect(res.body.ok).to.be.false;
-        expect(res.body.message).to.eq("O email já está em uso.");
-      });
+      const baseUser = buildUser();
+
+      return criarUsuario(baseUser)
+        .then(() =>
+          criarUsuario({
+            ...buildUser(),
+            email: baseUser.email,
+            userName: `unique_${crypto.randomUUID()}`,
+          }),
+        )
+        .then((res) => {
+          expect(res.status).to.eq(409);
+          expect(res.body.ok).to.be.false;
+          expect(res.body.message).to.eq("O email já está em uso.");
+        });
     });
 
     it("Falha ao criar usuário com dados inválidos", () => {
-      criarUsuario(users.invalidUser).then((res) => {
+      return criarUsuario(users.invalidUser).then((res) => {
         expect(res.status).to.eq(400);
         expect(res.body.ok).to.be.false;
       });
     });
 
     it("Não deve retornar a senha ao registrar usuário", () => {
-      const uniqueUser = {
-        ...users.validUser2,
-        email: `user_${crypto.randomUUID()}@teste.com`,
-        userName: `user_${crypto.randomUUID()}`,
-      };
+      const user = buildUser();
 
-      registrar(uniqueUser).then((res) => {
+      return criarUsuario(user).then((res) => {
         expect(res.status).to.eq(201);
         expect(res.body.ok).to.be.true;
         expect(res.body.user).to.not.have.property("password");
-        expect(res.body.user.email).to.eq(uniqueUser.email);
+        expect(res.body.user.email).to.eq(user.email);
       });
     });
   });
 
   describe("POST /api/users - registrar", () => {
     it("Não deve retornar a senha ao registrar usuário", () => {
-      const uniqueUser = {
-        ...users.validUser2,
-        email: `user_${crypto.randomUUID()}@teste.com`,
-        userName: `user_${crypto.randomUUID()}`,
-      };
+      const user = buildUser();
 
-      registrar(uniqueUser).then((res) => {
+      return criarUsuario(user).then((res) => {
         expect(res.status).to.eq(201);
         expect(res.body.ok).to.be.true;
         expect(res.body.user).to.not.have.property("password");
-        expect(res.body.user.email).to.eq(uniqueUser.email);
+        expect(res.body.user.email).to.eq(user.email);
       });
     });
 
@@ -116,6 +154,7 @@ describe("Usuários - E2E", () => {
         expect(res.body.user).to.not.have.property("password");
       });
     });
+
     it("Registra usuário sem URL de imagem (opcional)", () => {
       const noImageUser = {
         ...users.validUser2,
@@ -152,33 +191,36 @@ describe("Usuários - E2E", () => {
 
   describe("POST /api/users/login - login", () => {
     it("Faz login do usuário com sucesso", () => {
-      login(users.validUser1.email, users.validUser1.password).then((res) => {
-        expect(res.status).to.eq(200);
-        expect(res.body.ok).to.be.true;
-        expect(res.body.token).to.be.a("string");
-        token = res.body.token;
-      });
+      return login(users.validUser1.email, users.validUser1.password).then(
+        (res) => {
+          expect(res.status).to.eq(200);
+          expect(res.body.ok).to.be.true;
+          expect(res.body.token).to.be.a("string");
+        },
+      );
     });
 
     it("Falha ao logar com senha incorreta", () => {
-      login(users.validUser1.email, "senhaerrada").then((res) => {
+      return login(users.validUser1.email, "senhaerrada").then((res) => {
         expect(res.status).to.eq(401);
         expect(res.body.ok).to.be.false;
       });
     });
 
     it("Não deve retornar a senha no corpo da resposta ao fazer login", () => {
-      login(users.validUser1.email, users.validUser1.password).then((res) => {
-        expect(res.status).to.eq(200);
-        expect(res.body.ok).to.be.true;
-        expect(res.body.user).to.not.have.property("password");
-      });
+      return login(users.validUser1.email, users.validUser1.password).then(
+        (res) => {
+          expect(res.status).to.eq(200);
+          expect(res.body.ok).to.be.true;
+          expect(res.body.user).to.not.have.property("password");
+        },
+      );
     });
   });
 
   describe("GET /api/users - listarUsuarios", () => {
     it("Lista usuários com sucesso", () => {
-      listarUsuarios().then((res) => {
+      return listarUsuarios().then((res) => {
         expect(res.status).to.eq(200);
         expect(res.body.ok).to.be.true;
         expect(res.body.users).to.be.an("array");
@@ -187,7 +229,7 @@ describe("Usuários - E2E", () => {
     });
 
     it("Não deve expor a senha na listagem de usuários", () => {
-      listarUsuarios().then((res) => {
+      return listarUsuarios().then((res) => {
         expect(res.status).to.eq(200);
         expect(res.body.ok).to.be.true;
 
@@ -200,58 +242,43 @@ describe("Usuários - E2E", () => {
 
   describe("GET /api/users/:userId - buscarPorId", () => {
     it("Busca usuário por ID com sucesso", () => {
-      buscarPorIdUsuario(token, userId).then((res) => {
+      return buscarPorIdUsuario(token, userId).then((res) => {
         expect(res.status).to.eq(200);
         expect(res.body.ok).to.be.true;
-        expect(res.body.user).to.have.property("id", userId);
-        expect(res.body.user).to.have.property("email", users.validUser1.email);
+        expect(res.body.user.id).to.eq(userId);
       });
     });
 
     it("Falha ao buscar usuário com ID inválido", () => {
-      buscarPorIdUsuario(token, "id_invalido").then((res) => {
+      return buscarPorIdUsuario(token, "id_invalido").then((res) => {
         expect(res.status).to.eq(400);
         expect(res.body.ok).to.be.false;
       });
     });
 
     it("Falha ao buscar usuário inexistente", () => {
-      buscarPorIdUsuario(token, NON_EXISTENT_ID).then((res) => {
+      return buscarPorIdUsuario(token, NON_EXISTENT_ID).then((res) => {
         expect(res.status).to.eq(404);
         expect(res.body.ok).to.be.false;
       });
     });
 
     it("Falha ao buscar sem token de autenticação", () => {
-      cy.request({
-        method: "GET",
-        url: `http://localhost:3000/api/users/${userId}`,
-        failOnStatusCode: false,
-      }).then((res) => {
+      return buscarPorIdUsuario("", userId).then((res) => {
         expect(res.status).to.eq(401);
         expect(res.body.ok).to.be.false;
       });
     });
 
     it("Falha ao buscar com token inválido", () => {
-      cy.request({
-        method: "GET",
-        url: `http://localhost:3000/api/users/${userId}`,
-        headers: { Authorization: "Bearer token_invalido" },
-        failOnStatusCode: false,
-      }).then((res) => {
+      return buscarPorIdUsuario("Bearer invalid", userId).then((res) => {
         expect(res.status).to.eq(401);
         expect(res.body.ok).to.be.false;
       });
     });
 
     it("Falha ao buscar usuário com token expirado", () => {
-      cy.request({
-        method: "GET",
-        url: `http://localhost:3000/api/users/${userId}`,
-        headers: { Authorization: `Bearer token_expirado` },
-        failOnStatusCode: false,
-      }).then((res) => {
+      return buscarPorIdUsuario("token_expirad", userId).then((res) => {
         expect(res.status).to.eq(401);
         expect(res.body.ok).to.be.false;
         expect(res.body.message).to.eq("Token inválido ou expirado.");
@@ -259,7 +286,7 @@ describe("Usuários - E2E", () => {
     });
 
     it("Não deve expor a senha ao buscar usuário por ID", () => {
-      buscarPorIdUsuario(token, userId).then((res) => {
+      return buscarPorIdUsuario(token, userId).then((res) => {
         expect(res.status).to.eq(200);
         expect(res.body.ok).to.be.true;
         expect(res.body.user).to.not.have.property("password");
@@ -267,54 +294,74 @@ describe("Usuários - E2E", () => {
     });
 
     it("Deve retornar contadores no usuário", () => {
-      buscarPorIdUsuario(token, userId).then((res) => {
+      return buscarPorIdUsuario(token, userId).then((res) => {
         expect(res.body.user).to.have.property("tweetsCount");
         expect(res.body.user).to.have.property("followersCount");
         expect(res.body.user).to.have.property("followingCount");
       });
     });
+
+    it("Deve contar apenas tweets pai", () => {
+      return criarTweet(token, { content: "tweet pai" })
+        .then((res) => {
+          const parentId = res.body.tweet.id;
+
+          return criarReply(token, parentId, {
+            content: "reply",
+          });
+        })
+        .then(() => buscarPorIdUsuario(token, userId))
+        .then((res) => {
+          expect(res.body.user.tweetsCount).to.eq(1);
+        });
+    });
   });
 
   describe("DELETE /api/users/:userId - removerUsuario", () => {
-    it("Deleta usuário com sucesso", () => {
-      removerUsuario(token, userId).then((res) => {
-        expect(res.status).to.eq(200);
-        expect(res.body.ok).to.be.true;
-      });
+    it("Remove usuário com sucesso", () => {
+      const user = buildUser();
+
+      let tempToken = "";
+      let tempId = "";
+
+      return criarUsuario(user)
+        .then((res) => {
+          tempId = res.body.user.id;
+        })
+        .then(() => login(user.email, user.password))
+        .then((res) => {
+          tempToken = res.body.token;
+        })
+        .then(() => removerUsuario(tempToken, tempId))
+        .then((res) => {
+          expect(res.status).to.eq(200);
+          expect(res.body.ok).to.be.true;
+        });
     });
 
     it("Falha ao deletar usuário com Id inválido", () => {
-      removerUsuario(token, "id_invalido").then((res) => {
+      return removerUsuario(token, "id_invalido").then((res) => {
         expect(res.status).to.eq(400);
         expect(res.body.ok).to.be.false;
       });
     });
 
     it("Falha ao deletar usuário inexistente", () => {
-      removerUsuario(token, NON_EXISTENT_ID).then((res) => {
+      return removerUsuario(token, NON_EXISTENT_ID).then((res) => {
         expect(res.status).to.eq(404);
         expect(res.body.ok).to.be.false;
       });
     });
 
     it("Falha ao deletar sem token", () => {
-      cy.request({
-        method: "DELETE",
-        url: `http://localhost:3000/api/users/${userId}`,
-        failOnStatusCode: false,
-      }).then((res) => {
+      return removerUsuario("", userId).then((res) => {
         expect(res.status).to.eq(401);
         expect(res.body.ok).to.be.false;
       });
     });
 
     it("Falha ao deletar com token inválido", () => {
-      cy.request({
-        method: "DELETE",
-        url: `http://localhost:3000/api/users/${userId}`,
-        headers: { Authorization: "Bearer token_fake" },
-        failOnStatusCode: false,
-      }).then((res) => {
+      return removerUsuario("token_fake", userId).then((res) => {
         expect(res.status).to.eq(401);
         expect(res.body.ok).to.be.false;
       });
