@@ -10,10 +10,10 @@ export class LikeRepository {
       include: {
         user: true,
         tweet: {
-          include: {
-            user: true,
-            likes: { include: { user: true, tweet: true } },
-            replies: true,
+          select: {
+            id: true,
+            content: true,
+            userId: true,
           },
         },
       },
@@ -25,7 +25,16 @@ export class LikeRepository {
   async buscarLike(tweetId: string, userId: string): Promise<Like | null> {
     const like = await prisma.like.findUnique({
       where: { userId_tweetId: { userId, tweetId } },
-      include: { user: true, tweet: true },
+      include: {
+        user: true,
+        tweet: {
+          select: {
+            id: true,
+            content: true,
+            userId: true,
+          },
+        },
+      },
     });
 
     return like ? mapLike(like) : null;

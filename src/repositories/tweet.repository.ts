@@ -10,15 +10,6 @@ export class TweetRepository {
       include: {
         user: true,
         likes: { include: { user: true } },
-        replies: {
-          include: {
-            user: true,
-            likes: { include: { user: true } },
-            replies: {
-              include: { user: true, likes: { include: { user: true } } },
-            },
-          },
-        },
       },
     });
 
@@ -31,13 +22,10 @@ export class TweetRepository {
       include: {
         user: true,
         likes: { include: { user: true } },
-        replies: {
-          include: {
-            user: true,
-            likes: { include: { user: true } },
-            replies: {
-              include: { user: true, likes: { include: { user: true } } },
-            },
+        _count: {
+          select: {
+            likes: true,
+            replies: true,
           },
         },
       },
@@ -50,7 +38,7 @@ export class TweetRepository {
     return this.criarTweet(dto, userId);
   }
 
-  async buscarFeedUsuario(userId: string): Promise<Tweet[]> {
+  async buscarFeedUsuario(userId: string) {
     const following = await prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
@@ -58,28 +46,26 @@ export class TweetRepository {
 
     const followingIds = following.map((f) => f.followingId);
 
-    const tweets = await prisma.tweet.findMany({
+    return prisma.tweet.findMany({
       where: {
         userId: { in: [userId, ...followingIds] },
-        parentId: null,
       },
       include: {
         user: true,
-        likes: { include: { user: true } },
-        replies: {
+        likes: {
           include: {
             user: true,
-            likes: { include: { user: true } },
-            replies: {
-              include: { user: true, likes: { include: { user: true } } },
-            },
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            replies: true,
           },
         },
       },
       orderBy: { createdAt: "desc" },
     });
-
-    return tweets.map((t) => mapTweet(t));
   }
 
   async buscarReplies(

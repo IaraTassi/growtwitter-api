@@ -5,6 +5,7 @@ import { mapTweetToThreadDto } from "../mappers/profile.reply.mapper";
 import { mapProfileTweetResponse } from "../mappers/profile.tweet.response.mapper";
 import { ProfileRepository } from "../repositories/profile.repository";
 import { UserRepository } from "../repositories/user.repository";
+import { buildTweetTree, sortTweetTree } from "../utils/tweet.tree.util";
 
 export class ProfileService {
   private profileRepository = new ProfileRepository();
@@ -41,38 +42,6 @@ export class ProfileService {
     return current.id;
   }
 
-  private buildTree(tweets: any[]) {
-    const map = new Map();
-
-    tweets.forEach((t) => {
-      map.set(t.id, { ...t, replies: [] });
-    });
-
-    const roots: any[] = [];
-
-    tweets.forEach((t) => {
-      if (t.parentId) {
-        const parent = map.get(t.parentId);
-        if (parent) {
-          parent.replies.push(map.get(t.id));
-        }
-      } else {
-        roots.push(map.get(t.id));
-      }
-    });
-
-    return roots;
-  }
-
-  private sortTree(node: any) {
-    node.replies.sort(
-      (a: any, b: any) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    );
-
-    node.replies.forEach((r: any) => this.sortTree(r));
-  }
-
   async getProfileTweets(
     userId: string,
     loggedUserId: string,
@@ -105,11 +74,11 @@ export class ProfileService {
 
     const allTweets = await this.profileRepository.findAllTweetsBasic();
 
-    const tree = this.buildTree(allTweets);
+    const tree = buildTweetTree(allTweets);
 
     const threads = tree.filter((root) => rootIds.has(root.id));
 
-    threads.forEach((t) => this.sortTree(t));
+    threads.forEach(sortTweetTree);
 
     threads.sort(
       (a, b) =>

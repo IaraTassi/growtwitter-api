@@ -11,9 +11,13 @@ type TweetComRelacoes = PrismaTweet & {
   user?: PrismaUser;
   likes?: (PrismaLike & { user?: PrismaUser })[];
   replies?: TweetComRelacoes[];
+  _count?: {
+    likes: number;
+    replies: number;
+  };
 };
 
-export function mapTweet(tweet: TweetComRelacoes, depth = 0): Tweet {
+export function mapTweet(tweet: TweetComRelacoes): Tweet {
   return {
     id: tweet.id,
     content: tweet.content,
@@ -25,9 +29,8 @@ export function mapTweet(tweet: TweetComRelacoes, depth = 0): Tweet {
     user: tweet.user ? mapUser(tweet.user, true) : undefined,
     likes: tweet.likes?.map((l) => mapLike(l, true)) ?? [],
 
-    replies:
-      depth < 3
-        ? (tweet.replies?.map((r) => mapTweet(r, depth + 1)) ?? [])
-        : [],
+    replies: tweet.replies?.map(mapTweet) ?? [],
+    likesCount: tweet._count?.likes ?? 0,
+    repliesCount: tweet._count?.replies ?? 0,
   };
 }

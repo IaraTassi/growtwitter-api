@@ -191,30 +191,26 @@ describe("Usuários - E2E", () => {
 
   describe("POST /api/users/login - login", () => {
     it("Faz login do usuário com sucesso", () => {
-      return login(users.validUser1.email, users.validUser1.password).then(
-        (res) => {
-          expect(res.status).to.eq(200);
-          expect(res.body.ok).to.be.true;
-          expect(res.body.token).to.be.a("string");
-        },
-      );
+      return login(currentUser.email, currentUser.password).then((res) => {
+        expect(res.status).to.eq(200);
+        expect(res.body.ok).to.be.true;
+        expect(res.body.token).to.be.a("string");
+      });
     });
 
     it("Falha ao logar com senha incorreta", () => {
-      return login(users.validUser1.email, "senhaerrada").then((res) => {
+      return login(currentUser.email, "senhaerrada").then((res) => {
         expect(res.status).to.eq(401);
         expect(res.body.ok).to.be.false;
       });
     });
 
     it("Não deve retornar a senha no corpo da resposta ao fazer login", () => {
-      return login(users.validUser1.email, users.validUser1.password).then(
-        (res) => {
-          expect(res.status).to.eq(200);
-          expect(res.body.ok).to.be.true;
-          expect(res.body.user).to.not.have.property("password");
-        },
-      );
+      return login(currentUser.email, currentUser.password).then((res) => {
+        expect(res.status).to.eq(200);
+        expect(res.body.ok).to.be.true;
+        expect(res.body.user).to.not.have.property("password");
+      });
     });
   });
 

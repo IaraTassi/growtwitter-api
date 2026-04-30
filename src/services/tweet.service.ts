@@ -2,6 +2,8 @@ import { CreateTweetDto } from "../dtos/create.tweet.dto";
 import { Tweet } from "../interfaces/tweet.interface";
 import { TweetRepository } from "../repositories/tweet.repository";
 import { AppError } from "../errors/app.error";
+import { mapTweet } from "../mappers/tweet.mapper";
+import { buildTweetTree, sortTweetTree } from "../utils/tweet.tree.util";
 
 export class TweetService {
   private tweetRepository = new TweetRepository();
@@ -73,7 +75,14 @@ export class TweetService {
     this.validarCampo(userId, "O ID do usuário é obrigatório.");
 
     const tweets = await this.tweetRepository.buscarFeedUsuario(userId);
-    return tweets ?? [];
+
+    const tree = buildTweetTree(tweets);
+
+    const roots = tree.filter((t) => t.parentId === null);
+
+    roots.forEach(sortTweetTree);
+
+    return roots.map(mapTweet);
   }
 
   async buscarReplies(

@@ -13,12 +13,6 @@ export class UserRepository {
         password: dto.password,
         imageUrl: dto.imageUrl,
       },
-      include: {
-        tweets: true,
-        followers: true,
-        following: true,
-        likes: true,
-      },
     });
 
     return mapUser(user);
@@ -54,12 +48,6 @@ export class UserRepository {
       where: {
         OR: [{ email: identifier }, { userName: identifier }],
       },
-      include: {
-        tweets: true,
-        followers: true,
-        following: true,
-        likes: true,
-      },
     });
 
     return user ? mapUser(user) : null;
@@ -68,7 +56,6 @@ export class UserRepository {
   async listarUsuarios(): Promise<User[]> {
     const users = await prisma.user.findMany({
       include: {
-        tweets: true,
         followers: true,
         following: true,
         likes: true,
