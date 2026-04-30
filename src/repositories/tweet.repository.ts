@@ -38,7 +38,7 @@ export class TweetRepository {
     return this.criarTweet(dto, userId);
   }
 
-  async buscarFeedUsuario(userId: string): Promise<Tweet[]> {
+  async buscarFeedUsuario(userId: string) {
     const following = await prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
@@ -46,7 +46,7 @@ export class TweetRepository {
 
     const followingIds = following.map((f) => f.followingId);
 
-    const tweets = await prisma.tweet.findMany({
+    return prisma.tweet.findMany({
       where: {
         userId: { in: [userId, ...followingIds] },
       },
@@ -66,8 +66,6 @@ export class TweetRepository {
       },
       orderBy: { createdAt: "desc" },
     });
-
-    return tweets.map(mapTweet);
   }
 
   async buscarReplies(
