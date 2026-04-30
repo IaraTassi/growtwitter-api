@@ -13,11 +13,11 @@ export class LikeService {
   public setRepositoryParaTestes(
     likeRepo: LikeRepository,
     tweetRepo: TweetRepository,
-    userRepo: UserRepository
+    userRepo: UserRepository,
   ): void {
     if (process.env.NODE_ENV !== "test")
       throw new Error(
-        "setRepositoryParaTestes só pode ser usado em ambiente de teste."
+        "setRepositoryParaTestes só pode ser usado em ambiente de teste.",
       );
     this.likeRepository = likeRepo;
     this.tweetRepository = tweetRepo;
@@ -44,11 +44,11 @@ export class LikeService {
     this.validarCampo(dto.tweetId, "O ID do tweet é obrigatório.");
 
     await this.validarUsuarioExistente(userId);
-    const tweet = await this.validarTweetExistente(dto.tweetId);
+    await this.validarTweetExistente(dto.tweetId);
 
     const likeExistente = await this.likeRepository.buscarLike(
       dto.tweetId,
-      userId
+      userId,
     );
     if (likeExistente) {
       throw new AppError("Usuário já curtiu este tweet.", 409);
@@ -85,7 +85,7 @@ export class LikeService {
     this.validarCampo(tweetId, "O ID do tweet é obrigatório.");
 
     await this.validarUsuarioExistente(userId);
-    const tweet = await this.validarTweetExistente(tweetId);
+    await this.validarTweetExistente(tweetId);
 
     const likeExistente = await this.likeRepository.buscarLike(tweetId, userId);
 

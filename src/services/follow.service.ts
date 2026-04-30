@@ -53,10 +53,7 @@ export class FollowService {
     return this.followRepository.seguirUsuario(followerId, dto.followingId);
   }
 
-  async buscarFollow(
-    followerId: string,
-    followingId: string,
-  ): Promise<Follow | null> {
+  async buscarFollow(followerId: string, followingId: string): Promise<Follow> {
     this.validarCampo(followerId, "O ID do seguidor é obrigatório.");
     this.validarCampo(
       followingId,

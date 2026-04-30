@@ -1,4 +1,4 @@
-import { Tweet } from "./tweet.interface";
+import { TweetPreview } from "./tweet.preview.interface";
 import { User } from "./user.interface";
 
 export interface Like {
@@ -6,7 +6,7 @@ export interface Like {
   tweetId: string;
 
   user?: User;
-  tweet?: Tweet;
+  tweet?: TweetPreview;
 
   createdAt: Date;
   updatedAt: Date;

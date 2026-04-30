@@ -10,15 +10,6 @@ export class TweetRepository {
       include: {
         user: true,
         likes: { include: { user: true } },
-        replies: {
-          include: {
-            user: true,
-            likes: { include: { user: true } },
-            replies: {
-              include: { user: true, likes: { include: { user: true } } },
-            },
-          },
-        },
       },
     });
 
@@ -31,13 +22,10 @@ export class TweetRepository {
       include: {
         user: true,
         likes: { include: { user: true } },
-        replies: {
-          include: {
-            user: true,
-            likes: { include: { user: true } },
-            replies: {
-              include: { user: true, likes: { include: { user: true } } },
-            },
+        _count: {
+          select: {
+            likes: true,
+            replies: true,
           },
         },
       },
@@ -61,25 +49,25 @@ export class TweetRepository {
     const tweets = await prisma.tweet.findMany({
       where: {
         userId: { in: [userId, ...followingIds] },
-        parentId: null,
       },
       include: {
         user: true,
-        likes: { include: { user: true } },
-        replies: {
+        likes: {
           include: {
             user: true,
-            likes: { include: { user: true } },
-            replies: {
-              include: { user: true, likes: { include: { user: true } } },
-            },
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            replies: true,
           },
         },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return tweets.map((t) => mapTweet(t));
+    return tweets.map(mapTweet);
   }
 
   async buscarReplies(

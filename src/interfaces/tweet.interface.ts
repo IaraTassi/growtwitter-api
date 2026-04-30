@@ -14,4 +14,7 @@ export interface Tweet {
   likes?: Like[];
   createdAt: Date;
   updatedAt: Date;
+
+  likesCount: number;
+  repliesCount: number;
 }
